@@ -41,7 +41,7 @@ const AdminProducts: React.FC = () => {
           <h1 className="text-4xl font-heading font-bold text-white">Inventory</h1>
           <p className="text-white/40 mt-1">Manage your storefront items.</p>
         </div>
-        <Link to="/admin/add-product" className="flex items-center space-x-2 px-8 py-4 bg-brand text-white rounded-xl font-bold transition-all glow-hover">
+        <Link to="/_secure-admin-9xA7/add-product" className="flex items-center space-x-2 px-8 py-4 bg-brand text-white rounded-xl font-bold transition-all glow-hover">
           <Plus size={20} />
           <span>ADD PRODUCT</span>
         </Link>

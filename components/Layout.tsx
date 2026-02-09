@@ -7,8 +7,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const [isBW, setIsBW] = React.useState(() => localStorage.getItem('themePreference') === 'bw');
-  const location = useLocation();
-  const isAdminPath = location.pathname.includes('admin') || location.pathname.includes('dashboard');
 
   React.useEffect(() => {
     if (isBW) {
@@ -60,12 +58,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 {isBW ? <Sun size={14} className="text-brand" /> : <Palette size={14} className="text-brand" />}
                 <span className="text-[10px] font-bold uppercase tracking-widest">{isBW ? 'Luxury Mode' : 'B&W Mode'}</span>
               </button>
-
-              {!isAdminPath && (
-                 <Link to="/admin" className="text-xs text-white/30 hover:text-white transition-colors">
-                  Admin
-                 </Link>
-              )}
             </div>
 
             {/* Mobile Menu Button */}
@@ -106,13 +98,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     {link.name}
                   </Link>
                 ))}
-                <Link
-                  to="/admin"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="block text-sm text-white/40"
-                >
-                  Admin Access
-                </Link>
               </div>
             </motion.div>
           )}

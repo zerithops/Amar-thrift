@@ -1,0 +1,2 @@
+User-agent: *
+Disallow: /_secure-admin-9xA7/

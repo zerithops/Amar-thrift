@@ -1,54 +1,35 @@
 
-import React from 'react';
-import { HashRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-import Layout from './components/Layout';
-import Home from './pages/Home';
-import Order from './pages/Order';
-import TrackOrder from './pages/TrackOrder';
-import AdminLogin from './pages/AdminLogin';
-import Dashboard from './pages/Dashboard';
-import AdminProducts from './pages/AdminProducts';
-import AddEditProduct from './pages/AddEditProduct';
-import AdminGuard from './components/AdminGuard';
+import React, { Suspense } from 'react';
+import { Loader2 } from 'lucide-react';
 
-const ScrollToTop: React.FC = () => {
-  const { pathname, hash } = useLocation();
+// Lazy load the two separate applications
+const CustomerRoutes = React.lazy(() => import('./routes/CustomerRoutes'));
+const AdminRoutes = React.lazy(() => import('./routes/AdminRoutes'));
 
-  React.useEffect(() => {
-    if (hash) {
-      const element = document.getElementById(hash.substring(1));
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth' });
-      }
-    } else {
-      window.scrollTo(0, 0);
-    }
-  }, [pathname, hash]);
-
-  return null;
-};
+const LoadingFallback = () => (
+  <div className="min-h-screen flex items-center justify-center bg-[#0b0b0b]">
+    <Loader2 className="animate-spin text-[#e63946]" size={40} />
+  </div>
+);
 
 const App: React.FC = () => {
+  const [isAdminDomain, setIsAdminDomain] = React.useState(false);
+
+  React.useEffect(() => {
+    const hostname = window.location.hostname;
+    const searchParams = new URLSearchParams(window.location.search);
+    
+    // Check for 'admin.' subdomain OR 'admin_mode' query param for local dev
+    if (hostname.startsWith('admin.') || searchParams.get('admin_mode') === 'true') {
+      setIsAdminDomain(true);
+      // Clean URL for dev mode aesthetics if needed, but keeping logic simple
+    }
+  }, []);
+
   return (
-    <Router>
-      <ScrollToTop />
-      <Layout>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<Home />} />
-          <Route path="/order" element={<Order />} />
-          <Route path="/track-order" element={<TrackOrder />} />
-          
-          {/* Admin Auth */}
-          <Route path="/admin" element={<AdminLogin />} />
-          
-          {/* Protected Admin Routes */}
-          <Route path="/dashboard" element={<AdminGuard><Dashboard /></AdminGuard>} />
-          <Route path="/admin/products" element={<AdminGuard><AdminProducts /></AdminGuard>} />
-          <Route path="/admin/add-product" element={<AdminGuard><AddEditProduct /></AdminGuard>} />
-        </Routes>
-      </Layout>
-    </Router>
+    <Suspense fallback={<LoadingFallback />}>
+      {isAdminDomain ? <AdminRoutes /> : <CustomerRoutes />}
+    </Suspense>
   );
 };
 

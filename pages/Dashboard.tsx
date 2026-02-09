@@ -61,7 +61,7 @@ const Dashboard: React.FC = () => {
 
   const handleLogout = () => {
     localStorage.removeItem('adminSession');
-    navigate('/admin');
+    navigate('/_secure-admin-9xA7');
   };
 
   const getStatusColor = (status: OrderStatus) => {
@@ -104,11 +104,11 @@ const Dashboard: React.FC = () => {
         </div>
         
         <div className="flex flex-wrap items-center gap-4">
-          <Link to="/admin/products" className="flex items-center space-x-2 px-6 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl font-bold transition-all border border-white/10">
+          <Link to="/_secure-admin-9xA7/products" className="flex items-center space-x-2 px-6 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl font-bold transition-all border border-white/10">
             <List size={18} />
             <span>Products</span>
           </Link>
-          <Link to="/admin/add-product" className="flex items-center space-x-2 px-6 py-3 bg-brand text-white rounded-xl font-bold transition-all glow-hover">
+          <Link to="/_secure-admin-9xA7/add-product" className="flex items-center space-x-2 px-6 py-3 bg-brand text-white rounded-xl font-bold transition-all glow-hover">
             <Plus size={18} />
             <span>New Item</span>
           </Link>
