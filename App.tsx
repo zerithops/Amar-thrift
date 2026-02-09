@@ -8,12 +8,12 @@ import Order from './pages/Order';
 import TrackOrder from './pages/TrackOrder';
 import AdminGuard from './components/AdminGuard';
 
-// Lazy load admin pages
+// Lazy load pages
+const Shop = React.lazy(() => import('./pages/Shop'));
 const AdminLogin = React.lazy(() => import('./pages/AdminLogin'));
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
 const AdminProducts = React.lazy(() => import('./pages/AdminProducts'));
 const AddEditProduct = React.lazy(() => import('./pages/AddEditProduct'));
-// Using dashboard for orders view as per previous structure
 
 const ScrollToTop: React.FC = () => {
   const { pathname, hash } = useLocation();
@@ -33,8 +33,8 @@ const ScrollToTop: React.FC = () => {
 };
 
 const LoadingFallback = () => (
-  <div className="min-h-screen flex items-center justify-center bg-dark">
-    <Loader2 className="animate-spin text-brand" size={40} />
+  <div className="min-h-screen flex items-center justify-center bg-brand-gray">
+    <Loader2 className="animate-spin text-brand-blue" size={40} />
   </div>
 );
 
@@ -47,6 +47,7 @@ const App: React.FC = () => {
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<Home />} />
+            <Route path="/shop" element={<Shop />} />
             <Route path="/order" element={<Order />} />
             <Route path="/track-order" element={<TrackOrder />} />
             

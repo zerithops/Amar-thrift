@@ -2,18 +2,18 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Loader2, ShoppingBag } from 'lucide-react';
+import { Loader2, ShoppingBag } from 'lucide-react';
 import { firebaseService } from '../services/firebase';
 import { Product } from '../types';
 
-const Home: React.FC = () => {
+const Shop: React.FC = () => {
   const [products, setProducts] = React.useState<Product[]>([]);
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    // Only fetch first 3 products for featured section
+    // Dynamically fetch products from Admin upload
     firebaseService.getProducts().then(data => {
-      setProducts(data.slice(0, 3));
+      setProducts(data);
       setLoading(false);
     });
   }, []);
@@ -21,85 +21,36 @@ const Home: React.FC = () => {
   const formatPrice = (price: number) => `৳ ${price.toLocaleString()}`;
 
   return (
-    <div className="bg-brand-gray min-h-screen">
-      {/* Hero Section */}
-      <section className="relative h-[80vh] min-h-[600px] flex items-center justify-center overflow-hidden">
-        {/* Background Image */}
-        <div className="absolute inset-0 z-0">
-          <img 
-            src="https://images.unsplash.com/photo-1445205170230-053b83016050?q=80&w=2071&auto=format&fit=crop" 
-            alt="Fashion Background" 
-            className="w-full h-full object-cover"
-          />
-          {/* Light Blue Overlay */}
-          <div className="absolute inset-0 bg-brand-blue/30 mix-blend-multiply" />
-          <div className="absolute inset-0 bg-black/20" />
-        </div>
-
-        {/* Content */}
-        <div className="relative z-10 text-center px-4 max-w-4xl mx-auto space-y-6">
-          <motion.span 
+    <div className="bg-brand-gray min-h-screen pb-20">
+      {/* Header Section */}
+      <div className="bg-white border-b border-gray-100 py-16 mb-12 shadow-soft">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 text-center">
+          <motion.h1 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="inline-block px-4 py-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white text-xs font-bold uppercase tracking-widest"
+            className="text-4xl md:text-5xl font-heading font-bold text-brand-black mb-4"
           >
-            New Collection 2024
-          </motion.span>
-          
-          <motion.h1 
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="text-5xl md:text-7xl font-heading font-bold text-white leading-tight drop-shadow-lg"
-          >
-            Elevate Your Style
+            The Collection
           </motion.h1>
-          
           <motion.p 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.4 }}
-            className="text-lg md:text-xl text-white/90 font-light max-w-2xl mx-auto drop-shadow-md"
+            transition={{ delay: 0.1 }}
+            className="text-gray-500 max-w-xl mx-auto"
           >
-            Discover premium thrifted pieces that define modern elegance. Sustainable, stylish, and unique.
+            Explore our latest drop of premium vintage essentials.
           </motion.p>
-
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-            className="pt-6"
-          >
-            <Link 
-              to="/shop" 
-              className="inline-flex items-center space-x-3 bg-brand-blue text-white px-10 py-4 rounded-full font-bold uppercase tracking-wider hover:bg-white hover:text-brand-blue transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
-            >
-              <span>Shop Now</span>
-              <ArrowRight size={18} />
-            </Link>
-          </motion.div>
         </div>
-      </section>
+      </div>
 
-      {/* Featured Products Section */}
-      <section className="max-w-7xl mx-auto px-6 lg:px-8 py-24">
-        <div className="flex flex-col md:flex-row justify-between items-end mb-16 space-y-4 md:space-y-0">
-          <div className="space-y-2">
-            <h2 className="text-3xl md:text-4xl font-heading font-bold text-brand-black">Featured Items</h2>
-            <p className="text-gray-500">Handpicked highlights from our latest collection.</p>
-          </div>
-          <Link to="/shop" className="group flex items-center space-x-2 text-sm font-bold uppercase tracking-widest text-brand-blue hover:text-brand-black transition-colors">
-            <span>View All Products</span>
-            <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-          </Link>
-        </div>
-
+      {/* Product Grid */}
+      <div className="max-w-7xl mx-auto px-6 lg:px-8">
         {loading ? (
-          <div className="flex justify-center py-20">
+          <div className="flex justify-center py-32">
             <Loader2 className="animate-spin text-brand-blue" size={40} />
           </div>
         ) : products.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-2xl shadow-soft">
+          <div className="text-center py-32 bg-white rounded-2xl shadow-soft">
              <ShoppingBag size={48} className="mx-auto text-gray-300 mb-4" />
              <p className="text-gray-500 font-medium">No products currently available.</p>
           </div>
@@ -111,7 +62,7 @@ const Home: React.FC = () => {
                 initial={{ opacity: 0, y: 30 }} 
                 whileInView={{ opacity: 1, y: 0 }} 
                 viewport={{ once: true }} 
-                transition={{ duration: 0.5, delay: index * 0.1 }} 
+                transition={{ duration: 0.5, delay: index * 0.05 }} 
                 className="group bg-white rounded-2xl overflow-hidden shadow-soft hover:shadow-hover transition-all duration-300 transform hover:-translate-y-2 flex flex-col"
               >
                 {/* Image Container */}
@@ -148,9 +99,9 @@ const Home: React.FC = () => {
             ))}
           </div>
         )}
-      </section>
+      </div>
     </div>
   );
 };
 
-export default Home;
+export default Shop;
