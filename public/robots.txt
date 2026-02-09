@@ -1,2 +1,3 @@
 User-agent: *
-Disallow: /_secure-admin-9xA7/
+Disallow: /admin
+Disallow: /dashboard

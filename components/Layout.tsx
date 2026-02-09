@@ -1,12 +1,14 @@
 
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Instagram, Mail, Menu, X, Palette, Sun } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Instagram, Mail, Menu, X, Palette, Sun, MoreVertical } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+  const [isAdminMenuOpen, setIsAdminMenuOpen] = React.useState(false);
   const [isBW, setIsBW] = React.useState(() => localStorage.getItem('themePreference') === 'bw');
+  const navigate = useNavigate();
 
   React.useEffect(() => {
     if (isBW) {
@@ -60,20 +62,51 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               </button>
             </div>
 
-            {/* Mobile Menu Button */}
-            <div className="md:hidden flex items-center space-x-4">
-              <button 
-                onClick={toggleTheme}
-                className="p-2 text-white border border-white/10 rounded-full"
-              >
-                {isBW ? <Sun size={18} /> : <Palette size={18} />}
-              </button>
-              <button
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="text-white p-2"
-              >
-                {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-              </button>
+            {/* Right Side Actions */}
+            <div className="flex items-center space-x-2">
+               {/* 3-Dot Admin Menu */}
+               <div className="relative">
+                 <button 
+                   onClick={() => setIsAdminMenuOpen(!isAdminMenuOpen)}
+                   className="p-2 text-white/70 hover:text-white transition-colors"
+                 >
+                   <MoreVertical size={24} />
+                 </button>
+                 
+                 <AnimatePresence>
+                   {isAdminMenuOpen && (
+                     <>
+                       <div className="fixed inset-0 z-10" onClick={() => setIsAdminMenuOpen(false)}></div>
+                       <motion.div 
+                         initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                         animate={{ opacity: 1, y: 0, scale: 1 }}
+                         exit={{ opacity: 0, scale: 0.95 }}
+                         className="absolute right-0 top-full mt-2 w-48 bg-dark-card border border-white/10 rounded-xl shadow-xl z-20 py-2"
+                       >
+                         <button
+                           onClick={() => {
+                             setIsAdminMenuOpen(false);
+                             navigate('/admin');
+                           }}
+                           className="w-full text-left px-4 py-2 text-sm text-white/80 hover:bg-white/5 hover:text-brand transition-colors"
+                         >
+                           Admin Panel
+                         </button>
+                       </motion.div>
+                     </>
+                   )}
+                 </AnimatePresence>
+               </div>
+
+               {/* Mobile Menu Button */}
+               <div className="md:hidden">
+                <button
+                  onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  className="text-white p-2"
+                >
+                  {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+                </button>
+               </div>
             </div>
           </div>
         </div>
@@ -98,6 +131,15 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     {link.name}
                   </Link>
                 ))}
+                <div className="pt-4 border-t border-white/5">
+                  <button 
+                    onClick={toggleTheme}
+                    className="flex items-center space-x-2 text-white/70"
+                  >
+                    {isBW ? <Sun size={18} /> : <Palette size={18} />}
+                    <span className="text-sm font-medium">{isBW ? 'Switch to Color' : 'Switch to B&W'}</span>
+                  </button>
+                </div>
               </div>
             </motion.div>
           )}

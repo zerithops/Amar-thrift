@@ -20,7 +20,7 @@ const AdminLogin: React.FC = () => {
       formData.password === ADMIN_CREDENTIALS.password
     ) {
       localStorage.setItem('adminSession', 'true');
-      navigate('/_secure-admin-9xA7/dashboard');
+      navigate('/dashboard');
     } else {
       setError('Invalid credentials. Please try again.');
     }

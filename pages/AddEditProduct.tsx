@@ -36,7 +36,7 @@ const AddEditProduct: React.FC = () => {
         price: parseFloat(formData.price),
         stock: parseInt(formData.stock)
       });
-      navigate('/_secure-admin-9xA7/products');
+      navigate('/products');
     } catch (err) {
       alert('Failed to save product');
     } finally {
