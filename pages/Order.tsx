@@ -2,7 +2,7 @@
 import React from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, Loader2, ArrowRight, ShieldCheck, ExternalLink } from 'lucide-react';
+import { CheckCircle2, Loader2, ArrowRight, ShieldCheck, Instagram, Copy } from 'lucide-react';
 import { firebaseService } from '../services/firebase';
 import { Product } from '../types';
 
@@ -13,7 +13,6 @@ const Order: React.FC = () => {
   const [success, setSuccess] = React.useState(false);
   const [createdOrder, setCreatedOrder] = React.useState<any>(null);
   const [products, setProducts] = React.useState<Product[]>([]);
-  const [countdown, setCountdown] = React.useState(5);
   
   const [formData, setFormData] = React.useState({
     fullName: '',
@@ -58,22 +57,13 @@ const Order: React.FC = () => {
       });
       setCreatedOrder(order);
       setSuccess(true);
+      window.scrollTo(0,0);
     } catch (error) {
       alert('Failed to place order.');
     } finally {
       setLoading(false);
     }
   };
-
-  React.useEffect(() => {
-    let timer: any;
-    if (success && countdown > 0) {
-      timer = setInterval(() => setCountdown(prev => prev - 1), 1000);
-    } else if (success && countdown === 0) {
-      window.location.href = INSTAGRAM_LINK;
-    }
-    return () => clearInterval(timer);
-  }, [success, countdown]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -83,6 +73,13 @@ const Order: React.FC = () => {
     const found = products.find(p => p.name.toLowerCase() === formData.productName.toLowerCase());
     if (found) {
       setFormData(prev => ({ ...prev, price: found.price.toString() }));
+    }
+  };
+
+  const copyToken = () => {
+    if (createdOrder?.orderId) {
+        navigator.clipboard.writeText(createdOrder.orderId);
+        alert('Token copied!');
     }
   };
 
@@ -198,33 +195,45 @@ const Order: React.FC = () => {
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="max-w-xl mx-auto text-center pt-16 space-y-8"
+              className="max-w-2xl mx-auto pt-16 space-y-8"
             >
-              <div className="w-24 h-24 bg-brand-blue/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                <CheckCircle2 size={48} className="text-brand-blue" />
-              </div>
-              
-              <div className="space-y-2">
-                <h1 className="text-4xl font-heading font-bold text-brand-black">Order Received!</h1>
-                <p className="text-gray-500">Order ID: <span className="font-mono font-bold text-brand-black">{createdOrder?.orderId}</span></p>
-              </div>
+              <div className="bg-white p-10 rounded-3xl shadow-soft border border-gray-100 text-center">
+                <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <CheckCircle2 size={40} className="text-green-500" />
+                </div>
+                
+                <h1 className="text-4xl font-heading font-bold text-brand-black mb-2">Order Confirmed!</h1>
+                <p className="text-gray-500 mb-8">Your order has been placed successfully.</p>
 
-              <div className="bg-white p-8 rounded-2xl shadow-soft border border-gray-100 text-left">
-                <p className="text-sm text-gray-600 mb-4">
-                  Redirecting to Instagram DM for payment confirmation in <span className="font-bold text-brand-blue">{countdown}s</span>...
-                </p>
-                <div className="p-4 bg-gray-50 rounded-lg border border-gray-100 font-mono text-xs text-gray-600 break-all">
-                  Hello, I placed order #{createdOrder?.orderId} for ৳{createdOrder?.total}. Please confirm payment details.
+                <div className="bg-brand-blue/5 border border-brand-blue/10 p-6 rounded-2xl mb-8">
+                  <p className="text-xs font-bold uppercase tracking-widest text-brand-blue mb-2">Your Order Token</p>
+                  <div className="flex items-center justify-center gap-3">
+                    <span className="text-4xl font-mono font-bold text-brand-black tracking-wider">{createdOrder?.orderId}</span>
+                    <button onClick={copyToken} className="p-2 text-gray-400 hover:text-brand-black transition-colors" title="Copy Token">
+                        <Copy size={20} />
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-4 max-w-sm mx-auto">Please send this token to our Instagram to complete your payment and confirm delivery.</p>
+                </div>
+
+                <div className="space-y-4">
+                    <a 
+                        href={INSTAGRAM_LINK} 
+                        target="_blank"
+                        rel="noreferrer"
+                        className="w-full bg-brand-black text-white py-4 rounded-xl font-bold uppercase tracking-widest hover:bg-[#E1306C] transition-all shadow-lg flex items-center justify-center space-x-3"
+                    >
+                        <Instagram size={20} />
+                        <span>Pay on Instagram</span>
+                    </a>
+                    <button 
+                        onClick={() => window.location.reload()}
+                        className="text-sm font-bold text-gray-400 hover:text-brand-black transition-colors"
+                    >
+                        Return to Shop
+                    </button>
                 </div>
               </div>
-
-              <button 
-                onClick={() => window.location.href = INSTAGRAM_LINK}
-                className="inline-flex items-center space-x-2 text-sm font-bold uppercase tracking-widest text-brand-black border-b-2 border-brand-black pb-1 hover:text-brand-blue hover:border-brand-blue transition-colors"
-              >
-                <span>Click if not redirected</span>
-                <ExternalLink size={16} />
-              </button>
             </motion.div>
           )}
         </AnimatePresence>

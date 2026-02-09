@@ -2,7 +2,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Plus, Trash2, Edit2, Package, Search } from 'lucide-react';
+import { Plus, Trash2, Package, Search } from 'lucide-react';
 import { firebaseService } from '../services/firebase';
 import { Product } from '../types';
 
@@ -69,8 +69,11 @@ const AdminProducts: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredProducts.map((p, idx) => (
             <motion.div key={p.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }} className="bg-white border border-gray-100 rounded-2xl p-4 flex items-center space-x-6 shadow-soft hover:shadow-hover transition-all group">
-              <div className="w-24 h-24 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">
-                <img src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+              <div className="w-24 h-24 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100 relative">
+                <img src={p.images[0]} alt={p.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                {p.images.length > 1 && (
+                    <div className="absolute bottom-1 right-1 bg-black/50 text-white text-[10px] px-1.5 rounded-full font-bold">+{p.images.length - 1}</div>
+                )}
               </div>
               <div className="flex-grow overflow-hidden">
                 <p className="text-brand-blue text-[10px] font-bold uppercase tracking-widest">{p.category}</p>

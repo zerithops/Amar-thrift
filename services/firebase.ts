@@ -5,11 +5,21 @@ import { PRODUCTS } from '../constants';
 const ORDERS_KEY = 'amar_thrift_orders';
 const PRODUCTS_KEY = 'amar_thrift_products';
 
-// Helper to initialize products if empty
+// Helper to initialize products if empty or migrate old data
 const initProducts = () => {
   const existing = localStorage.getItem(PRODUCTS_KEY);
   if (!existing) {
     localStorage.setItem(PRODUCTS_KEY, JSON.stringify(PRODUCTS));
+  } else {
+    // Migration logic: if products have 'image' string, convert to 'images' array
+    const parsed = JSON.parse(existing);
+    if (parsed.length > 0 && !parsed[0].images) {
+        const migrated = parsed.map((p: any) => ({
+            ...p,
+            images: p.images || (p.image ? [p.image] : [])
+        }));
+        localStorage.setItem(PRODUCTS_KEY, JSON.stringify(migrated));
+    }
   }
 };
 

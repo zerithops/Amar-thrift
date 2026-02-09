@@ -15,7 +15,7 @@ export enum PaymentStatus {
 
 export interface Order {
   id?: string;
-  orderId: string; // Human readable short ID
+  orderId: string; // Human readable short ID (Token)
   fullName: string;
   email: string;
   phone: string;
@@ -36,7 +36,7 @@ export interface Product {
   id?: string;
   name: string;
   price: number;
-  image: string;
+  images: string[]; // Changed to array of strings
   description: string;
   category: Category;
   stock: number;

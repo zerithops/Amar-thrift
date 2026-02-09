@@ -1,22 +1,50 @@
 
 import React from 'react';
-import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
-import { Loader2, ShoppingBag } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Link, useNavigate } from 'react-router-dom';
+import { Loader2, ShoppingBag, X, ChevronLeft, ChevronRight, ZoomIn } from 'lucide-react';
 import { firebaseService } from '../services/firebase';
 import { Product } from '../types';
 
 const Shop: React.FC = () => {
   const [products, setProducts] = React.useState<Product[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [selectedProduct, setSelectedProduct] = React.useState<Product | null>(null);
+  const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
+  const navigate = useNavigate();
 
   React.useEffect(() => {
-    // Dynamically fetch products from Admin upload
     firebaseService.getProducts().then(data => {
       setProducts(data);
       setLoading(false);
     });
   }, []);
+
+  const openModal = (product: Product) => {
+    setSelectedProduct(product);
+    setCurrentImageIndex(0);
+    // Prevent background scroll
+    document.body.style.overflow = 'hidden';
+  };
+
+  const closeModal = () => {
+    setSelectedProduct(null);
+    document.body.style.overflow = 'auto';
+  };
+
+  const nextImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (selectedProduct) {
+      setCurrentImageIndex((prev) => (prev + 1) % selectedProduct.images.length);
+    }
+  };
+
+  const prevImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (selectedProduct) {
+      setCurrentImageIndex((prev) => (prev - 1 + selectedProduct.images.length) % selectedProduct.images.length);
+    }
+  };
 
   const formatPrice = (price: number) => `৳ ${price.toLocaleString()}`;
 
@@ -62,26 +90,23 @@ const Shop: React.FC = () => {
                 initial={{ opacity: 0, y: 30 }} 
                 whileInView={{ opacity: 1, y: 0 }} 
                 viewport={{ once: true }} 
-                transition={{ duration: 0.5, delay: index * 0.05 }} 
-                className="group bg-white rounded-2xl overflow-hidden shadow-soft hover:shadow-hover transition-all duration-300 transform hover:-translate-y-2 flex flex-col"
+                transition={{ duration: 0.5, delay: index * 0.05 }}
+                onClick={() => openModal(product)}
+                className="group bg-white rounded-2xl overflow-hidden shadow-soft hover:shadow-hover transition-all duration-300 transform hover:-translate-y-2 flex flex-col cursor-pointer"
               >
                 {/* Image Container */}
                 <div className="relative aspect-[3/4] overflow-hidden bg-gray-100">
                   <img 
-                    src={product.image} 
+                    src={product.images[0]} 
                     alt={product.name} 
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
                   />
                   {/* Overlay on Hover */}
-                  <div className="absolute inset-0 bg-brand-blue/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  
-                  {/* Quick Add Button */}
-                  <Link 
-                    to={`/order?product=${encodeURIComponent(product.name)}`}
-                    className="absolute bottom-4 left-4 right-4 bg-white text-brand-black py-3 rounded-xl font-bold text-center text-sm shadow-lg opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 hover:bg-brand-blue hover:text-white"
-                  >
-                    Order Now
-                  </Link>
+                  <div className="absolute inset-0 bg-brand-blue/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                    <div className="bg-white/20 backdrop-blur-md p-3 rounded-full text-white">
+                      <ZoomIn size={24} />
+                    </div>
+                  </div>
                 </div>
                 
                 {/* Product Info */}
@@ -92,7 +117,9 @@ const Shop: React.FC = () => {
                   </div>
                   <div className="pt-4 border-t border-gray-100 flex items-center justify-between">
                     <span className="text-xl font-heading font-bold text-brand-black">{formatPrice(product.price)}</span>
-                    <span className="text-xs text-gray-400 font-medium">{product.stock > 0 ? 'In Stock' : 'Sold Out'}</span>
+                    <button className="text-xs bg-brand-black text-white px-3 py-1.5 rounded-full font-bold uppercase tracking-wider hover:bg-brand-blue transition-colors">
+                        View
+                    </button>
                   </div>
                 </div>
               </motion.div>
@@ -100,6 +127,110 @@ const Shop: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Product Details Modal */}
+      <AnimatePresence>
+        {selectedProduct && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+            onClick={closeModal}
+          >
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white w-full max-w-5xl max-h-[90vh] rounded-3xl overflow-hidden shadow-2xl grid grid-cols-1 md:grid-cols-2 relative"
+            >
+              <button 
+                onClick={closeModal} 
+                className="absolute top-4 right-4 z-10 bg-white/50 backdrop-blur hover:bg-white p-2 rounded-full transition-colors text-black"
+              >
+                <X size={24} />
+              </button>
+
+              {/* Image Gallery */}
+              <div className="relative bg-gray-100 aspect-[4/5] md:aspect-auto md:h-full group">
+                <img 
+                  src={selectedProduct.images[currentImageIndex]} 
+                  alt={selectedProduct.name} 
+                  className="w-full h-full object-cover"
+                />
+                
+                {selectedProduct.images.length > 1 && (
+                  <>
+                    <button 
+                      onClick={prevImage}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <ChevronLeft size={20} />
+                    </button>
+                    <button 
+                      onClick={nextImage}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <ChevronRight size={20} />
+                    </button>
+                    
+                    {/* Dots Indicator */}
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2">
+                      {selectedProduct.images.map((_, idx) => (
+                        <div 
+                          key={idx} 
+                          className={`w-2 h-2 rounded-full transition-colors ${idx === currentImageIndex ? 'bg-brand-blue' : 'bg-white/50'}`}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Details */}
+              <div className="p-8 md:p-12 flex flex-col h-full overflow-y-auto">
+                <div className="flex-grow">
+                   <p className="text-brand-blue font-bold uppercase tracking-widest text-xs mb-2">{selectedProduct.category}</p>
+                   <h2 className="text-3xl md:text-4xl font-heading font-bold text-brand-black mb-4">{selectedProduct.name}</h2>
+                   <p className="text-2xl font-bold text-brand-black mb-6">{formatPrice(selectedProduct.price)}</p>
+                   
+                   <div className="space-y-4 mb-8">
+                     <h3 className="text-sm font-bold uppercase text-gray-400">Description</h3>
+                     <p className="text-gray-600 leading-relaxed">{selectedProduct.description}</p>
+                   </div>
+
+                   <div className="flex items-center space-x-4 mb-8">
+                      {selectedProduct.stock > 0 ? (
+                        <span className="inline-flex items-center px-3 py-1 rounded-full bg-green-50 text-green-600 text-xs font-bold uppercase tracking-wider">
+                          In Stock ({selectedProduct.stock})
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-3 py-1 rounded-full bg-red-50 text-red-600 text-xs font-bold uppercase tracking-wider">
+                          Sold Out
+                        </span>
+                      )}
+                   </div>
+                </div>
+
+                <div className="mt-auto pt-6 border-t border-gray-100">
+                  <button 
+                    onClick={() => {
+                      closeModal();
+                      navigate(`/order?product=${encodeURIComponent(selectedProduct.name)}`);
+                    }}
+                    className="w-full bg-brand-black text-white py-4 rounded-xl font-bold uppercase tracking-widest hover:bg-brand-blue transition-all shadow-lg hover:shadow-xl flex items-center justify-center space-x-2"
+                  >
+                    <span>Order Now</span>
+                    <ShoppingBag size={20} />
+                  </button>
+                </div>
+              </div>
+
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

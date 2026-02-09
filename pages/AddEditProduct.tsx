@@ -1,8 +1,7 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { ArrowLeft, Save, Loader2, Upload, X, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, Upload, X } from 'lucide-react';
 import { firebaseService } from '../services/firebase';
 import { Category } from '../types';
 
@@ -13,7 +12,7 @@ const AddEditProduct: React.FC = () => {
   const [loading, setLoading] = React.useState(false);
   const [formData, setFormData] = React.useState({
     name: '',
-    image: '',
+    images: [] as string[],
     description: '',
     price: '',
     category: 'T-Shirt' as Category,
@@ -24,8 +23,8 @@ const AddEditProduct: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     
-    if (!formData.image) {
-      alert('Please upload an image for the product.');
+    if (formData.images.length === 0) {
+      alert('Please upload at least one image for the product.');
       setLoading(false);
       return;
     }
@@ -51,6 +50,10 @@ const AddEditProduct: React.FC = () => {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (formData.images.length >= 4) {
+        alert('Maximum 4 images allowed.');
+        return;
+      }
       if (file.size > 5 * 1024 * 1024) { // 5MB limit check
         alert('Image size should be less than 5MB');
         return;
@@ -58,14 +61,19 @@ const AddEditProduct: React.FC = () => {
 
       const reader = new FileReader();
       reader.onloadend = () => {
-        setFormData(prev => ({ ...prev, image: reader.result as string }));
+        setFormData(prev => ({ ...prev, images: [...prev.images, reader.result as string] }));
       };
       reader.readAsDataURL(file);
     }
+    // Reset input
+    e.target.value = '';
   };
 
-  const clearImage = () => {
-    setFormData(prev => ({ ...prev, image: '' }));
+  const removeImage = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index)
+    }));
   };
 
   return (
@@ -111,40 +119,37 @@ const AddEditProduct: React.FC = () => {
 
           <div className="space-y-6">
             <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-widest text-gray-400 px-1">Product Image</label>
+              <label className="text-xs font-bold uppercase tracking-widest text-gray-400 px-1">Product Images ({formData.images.length}/4)</label>
               
-              {!formData.image ? (
-                <div className="relative w-full aspect-square md:aspect-[4/3] bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl hover:border-brand-blue/50 transition-colors flex flex-col items-center justify-center cursor-pointer group">
-                  <input 
-                    type="file" 
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                  />
-                  <div className="p-4 bg-white rounded-full mb-4 group-hover:scale-110 transition-transform shadow-sm">
-                    <Upload size={24} className="text-gray-400 group-hover:text-brand-blue" />
-                  </div>
-                  <p className="text-sm text-gray-500 font-medium">Click to upload image</p>
-                  <p className="text-xs text-gray-400 mt-2">JPG, PNG up to 5MB</p>
-                </div>
-              ) : (
-                <div className="relative w-full aspect-square md:aspect-[4/3] rounded-xl overflow-hidden group shadow-md">
-                  <img 
-                    src={formData.image} 
-                    alt="Preview" 
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <div className="grid grid-cols-2 gap-4">
+                {formData.images.map((img, idx) => (
+                  <div key={idx} className="relative aspect-square rounded-xl overflow-hidden group border border-gray-100">
+                    <img src={img} alt={`Upload ${idx}`} className="w-full h-full object-cover" />
                     <button 
                       type="button"
-                      onClick={clearImage}
-                      className="bg-white text-red-500 p-3 rounded-full transition-all hover:scale-110 shadow-lg"
+                      onClick={() => removeImage(idx)}
+                      className="absolute top-2 right-2 bg-white text-red-500 p-1.5 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
                     >
-                      <X size={24} />
+                      <X size={16} />
                     </button>
                   </div>
-                </div>
-              )}
+                ))}
+
+                {formData.images.length < 4 && (
+                  <div className="relative aspect-square bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl hover:border-brand-blue/50 transition-colors flex flex-col items-center justify-center cursor-pointer group">
+                    <input 
+                      type="file" 
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                    />
+                    <div className="p-3 bg-white rounded-full mb-2 group-hover:scale-110 transition-transform shadow-sm">
+                      <Upload size={20} className="text-gray-400 group-hover:text-brand-blue" />
+                    </div>
+                    <p className="text-xs text-gray-500 font-medium">Add Image</p>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="space-y-2">
