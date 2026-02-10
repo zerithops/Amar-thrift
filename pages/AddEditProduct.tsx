@@ -10,89 +10,116 @@ const CATEGORIES: Category[] = ['T-Shirt', 'Hoodie', 'Jacket', 'Pants', 'Sweater
 const AddEditProduct: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = React.useState(false);
-  const [uploading, setUploading] = React.useState(false);
+  
+  // Data State
   const [formData, setFormData] = React.useState({
     name: '',
-    images: [] as string[],
     description: '',
     price: '',
     category: 'T-Shirt' as Category,
     stock: '1'
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    
-    if (formData.images.length === 0) {
-      alert('Please upload at least one image for the product.');
-      setLoading(false);
-      return;
-    }
+  // File Management State
+  const [selectedFiles, setSelectedFiles] = React.useState<File[]>([]);
+  const [previews, setPreviews] = React.useState<string[]>([]);
 
-    try {
-      await firebaseService.addProduct({
-        ...formData,
-        price: parseFloat(formData.price),
-        stock: parseInt(formData.stock)
-      });
-      navigate('/products');
-    } catch (err) {
-      alert('Failed to save product');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Cleanup object URLs to avoid memory leaks
+  React.useEffect(() => {
+    return () => {
+      previews.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    if (formData.images.length + files.length > 6) {
-      alert('Maximum 6 images allowed.');
-      if (e.target) e.target.value = ''; // Reset input
+    // Convert FileList to array
+    const fileArray = Array.from(files);
+    
+    // Validations
+    if (selectedFiles.length + fileArray.length > 6) {
+      alert('Maximum 6 images allowed per product.');
+      if (e.target) e.target.value = ''; 
       return;
     }
 
-    setUploading(true);
-    const newImages: string[] = [];
-    // Explicitly cast to File[] to avoid 'unknown' type inference issues
-    const fileArray = Array.from(files) as File[];
+    const newFiles: File[] = [];
+    const newPreviews: string[] = [];
 
-    try {
-      for (const file of fileArray) {
-        if (file.size > 5 * 1024 * 1024) { 
-          alert(`File ${file.name} is too large (max 5MB)`);
-          continue; 
-        }
-        // Uploads to Supabase storage and gets public URL
-        const publicUrl = await firebaseService.uploadFile(file);
-        newImages.push(publicUrl);
-      }
-      
-      if (newImages.length > 0) {
-        setFormData(prev => ({ ...prev, images: [...prev.images, ...newImages] }));
-      }
-    } catch (error) {
-      alert('Failed to upload some images. Please try again.');
-      console.error(error);
-    } finally {
-      setUploading(false);
-      // Reset input to allow selecting the same files again if needed
-      if (e.target) e.target.value = '';
+    for (const file of fileArray) {
+       // Size check (5MB)
+       if (file.size > 5 * 1024 * 1024) {
+         alert(`File "${file.name}" is too large (Max 5MB). Skipped.`);
+         continue;
+       }
+       newFiles.push(file);
+       newPreviews.push(URL.createObjectURL(file));
     }
+
+    setSelectedFiles(prev => [...prev, ...newFiles]);
+    setPreviews(prev => [...prev, ...newPreviews]);
+    
+    // Reset input so same file can be selected again if needed
+    if (e.target) e.target.value = '';
   };
 
   const removeImage = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index)
-    }));
+    // Revoke the URL object
+    URL.revokeObjectURL(previews[index]);
+    
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+    setPreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (selectedFiles.length === 0) {
+      alert('Please upload at least one image for the product.');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const imageUrls: string[] = [];
+
+      // 1. Upload Loop
+      for (const file of selectedFiles) {
+        try {
+           const url = await firebaseService.uploadFile(file);
+           imageUrls.push(url);
+        } catch (uploadError: any) {
+           console.error(uploadError);
+           alert(`Failed to upload image "${file.name}". Please check your internet connection and try again.`);
+           setLoading(false);
+           return; // Stop the entire process if one image fails to ensure data integrity
+        }
+      }
+
+      // 2. Database Insert
+      await firebaseService.addProduct({
+        ...formData,
+        price: parseFloat(formData.price),
+        stock: parseInt(formData.stock),
+        images: imageUrls
+      });
+
+      // 3. Success
+      navigate('/products');
+
+    } catch (err) {
+      alert('Failed to save product information to database.');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -138,12 +165,12 @@ const AddEditProduct: React.FC = () => {
 
           <div className="space-y-6">
             <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-widest text-gray-400 px-1">Product Images ({formData.images.length}/6)</label>
+              <label className="text-xs font-bold uppercase tracking-widest text-gray-400 px-1">Product Images ({selectedFiles.length}/6)</label>
               
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-                {formData.images.map((img, idx) => (
-                  <div key={idx} className="relative aspect-square rounded-xl overflow-hidden group border border-gray-100">
-                    <img src={img} alt={`Upload ${idx}`} className="w-full h-full object-cover" />
+                {previews.map((previewUrl, idx) => (
+                  <div key={idx} className="relative aspect-square rounded-xl overflow-hidden group border border-gray-100 bg-gray-50">
+                    <img src={previewUrl} alt={`Preview ${idx}`} className="w-full h-full object-cover" />
                     <button 
                       type="button"
                       onClick={() => removeImage(idx)}
@@ -154,23 +181,24 @@ const AddEditProduct: React.FC = () => {
                   </div>
                 ))}
 
-                {formData.images.length < 6 && (
-                  <div className={`relative aspect-square bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl transition-colors flex flex-col items-center justify-center cursor-pointer group ${uploading ? 'opacity-50 pointer-events-none' : 'hover:border-brand-blue/50'}`}>
+                {selectedFiles.length < 6 && (
+                  <div className={`relative aspect-square bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl transition-colors flex flex-col items-center justify-center cursor-pointer group ${loading ? 'opacity-50 pointer-events-none' : 'hover:border-brand-blue/50'}`}>
                     <input 
                       type="file" 
                       multiple
                       accept="image/*"
-                      onChange={handleImageUpload}
+                      onChange={handleImageSelect}
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                      disabled={uploading}
+                      disabled={loading}
                     />
                     <div className="p-3 bg-white rounded-full mb-2 group-hover:scale-110 transition-transform shadow-sm">
-                      {uploading ? <Loader2 size={20} className="animate-spin text-brand-blue" /> : <Upload size={20} className="text-gray-400 group-hover:text-brand-blue" />}
+                       <Upload size={20} className="text-gray-400 group-hover:text-brand-blue" />
                     </div>
-                    <p className="text-xs text-gray-500 font-medium">{uploading ? 'Uploading...' : 'Add Images'}</p>
+                    <p className="text-xs text-gray-500 font-medium">Add Images</p>
                   </div>
                 )}
               </div>
+              <p className="text-[10px] text-gray-400 pt-1">* Images upload when you click "List Product"</p>
             </div>
 
             <div className="space-y-2">
@@ -179,8 +207,18 @@ const AddEditProduct: React.FC = () => {
             </div>
 
             <div className="pt-4">
-              <button disabled={loading || uploading} type="submit" className="w-full bg-brand-black hover:bg-brand-blue text-white font-bold py-5 rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center space-x-2">
-                {loading ? <Loader2 className="animate-spin"/> : <><Save size={20}/> <span>LIST PRODUCT</span></>}
+              <button disabled={loading} type="submit" className="w-full bg-brand-black hover:bg-brand-blue text-white font-bold py-5 rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center space-x-2 disabled:opacity-70 disabled:cursor-not-allowed">
+                {loading ? (
+                    <>
+                        <Loader2 className="animate-spin" /> 
+                        <span>UPLOADING & SAVING...</span>
+                    </>
+                ) : (
+                    <>
+                        <Save size={20}/> 
+                        <span>LIST PRODUCT</span>
+                    </>
+                )}
               </button>
             </div>
           </div>

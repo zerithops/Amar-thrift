@@ -11,31 +11,39 @@ export const firebaseService = {
 
   // --- STORAGE (Product Images) ---
   async uploadFile(file: File): Promise<string> {
-    // Preserve extension (e.g., .png, .jpg)
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-    // Path inside the bucket
-    const filePath = `${fileName}`;
+    try {
+      // Preserve extension (e.g., .png, .jpg)
+      const fileExt = file.name.split('.').pop() || 'png';
+      // Sanitize filename to prevent issues with special characters
+      const fileNameRaw = file.name.substring(0, file.name.lastIndexOf('.'));
+      const sanitizedName = fileNameRaw.replace(/[^a-zA-Z0-9]/g, '-').substring(0, 50); // Limit length
+      const fileName = `${Date.now()}-${sanitizedName}.${fileExt}`;
+      
+      // Path inside the bucket
+      const filePath = `${fileName}`;
 
-    // Upload to 'product-images' bucket
-    const { data, error } = await supabase.storage
-      .from('product-images')
-      .upload(filePath, file, {
-        cacheControl: '3600',
-        upsert: false
-      });
+      // Upload to 'product-images' bucket
+      const { data, error } = await supabase.storage
+        .from('product-images')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
-    if (error) {
+      if (error) {
+        throw error;
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (error: any) {
       console.error('Supabase Upload Error:', error);
-      throw error;
+      throw new Error(`Upload failed for ${file.name}: ${error.message || 'Unknown error'}`);
     }
-
-    // Get public URL
-    const { data: { publicUrl } } = supabase.storage
-      .from('product-images')
-      .getPublicUrl(filePath);
-
-    return publicUrl;
   },
 
   // --- ORDERS ---
