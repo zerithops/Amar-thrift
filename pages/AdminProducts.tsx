@@ -13,9 +13,14 @@ const AdminProducts: React.FC = () => {
 
   const fetchProducts = React.useCallback(async () => {
     setLoading(true);
-    const data = await firebaseService.getProducts();
-    setProducts(data);
-    setLoading(false);
+    try {
+      const data = await firebaseService.getProducts();
+      setProducts(data);
+    } catch (error) {
+      console.error("Failed to load products", error);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   React.useEffect(() => {
@@ -23,7 +28,7 @@ const AdminProducts: React.FC = () => {
   }, [fetchProducts]);
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('Delete this product?')) {
+    if (window.confirm('Delete this product? This cannot be undone.')) {
       await firebaseService.deleteProduct(id);
       fetchProducts();
     }

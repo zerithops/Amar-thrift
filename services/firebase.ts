@@ -14,15 +14,19 @@ export const firebaseService = {
     // Preserve extension (e.g., .png, .jpg)
     const fileExt = file.name.split('.').pop();
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+    // Path inside the bucket
     const filePath = `${fileName}`;
 
     // Upload to 'product-images' bucket
     const { data, error } = await supabase.storage
       .from('product-images')
-      .upload(filePath, file);
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
 
     if (error) {
-      console.error('Upload error:', error);
+      console.error('Supabase Upload Error:', error);
       throw error;
     }
 
@@ -57,7 +61,10 @@ export const firebaseService = {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error("Error creating order:", error);
+      throw error;
+    }
 
     return {
       ...orderData,
@@ -75,7 +82,10 @@ export const firebaseService = {
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (error) return [];
+    if (error) {
+      console.error("Error fetching orders:", error);
+      return [];
+    }
 
     return data.map((o: any) => ({
       id: o.id,
@@ -130,7 +140,8 @@ export const firebaseService = {
     if (updates.deliveryCharge) dbUpdates.delivery_charge = updates.deliveryCharge;
     if (updates.total) dbUpdates.total = updates.total;
 
-    await supabase.from('orders').update(dbUpdates).eq('id', id);
+    const { error } = await supabase.from('orders').update(dbUpdates).eq('id', id);
+    if (error) console.error("Error updating order:", error);
   },
 
   // --- PRODUCTS ---
@@ -140,13 +151,17 @@ export const firebaseService = {
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (error) return [];
+    if (error) {
+      console.error("Error fetching products:", error);
+      return [];
+    }
 
     return data.map((p: any) => ({
       id: p.id,
       name: p.name,
       price: p.price,
-      images: p.images || [], 
+      // Handle both array and potential nulls safely
+      images: Array.isArray(p.images) ? p.images : (p.images ? [p.images] : []), 
       description: p.description,
       category: p.category,
       stock: p.stock,
@@ -168,24 +183,16 @@ export const firebaseService = {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error("Error adding product:", error);
+      throw error;
+    }
     return data.id;
   },
 
-  async updateProduct(id: string, updates: Partial<Product>): Promise<void> {
-    const dbUpdates: any = {};
-    if (updates.name) dbUpdates.name = updates.name;
-    if (updates.price) dbUpdates.price = updates.price;
-    if (updates.description) dbUpdates.description = updates.description;
-    if (updates.stock) dbUpdates.stock = updates.stock;
-    if (updates.category) dbUpdates.category = updates.category;
-    if (updates.images) dbUpdates.images = updates.images;
-
-    await supabase.from('products').update(dbUpdates).eq('id', id);
-  },
-
   async deleteProduct(id: string): Promise<void> {
-    await supabase.from('products').delete().eq('id', id);
+    const { error } = await supabase.from('products').delete().eq('id', id);
+    if (error) console.error("Error deleting product:", error);
   },
 
   // --- REVIEWS ---
@@ -207,34 +214,38 @@ export const firebaseService = {
   },
 
   async addReview(review: Omit<Review, 'id' | 'createdAt'>): Promise<void> {
-    await supabase.from('reviews').insert([{
+    const { error } = await supabase.from('reviews').insert([{
       name: review.name,
       rating: review.rating,
       message: review.message
     }]);
+    if (error) console.error("Error adding review:", error);
   },
 
   async deleteReview(id: string): Promise<void> {
-    await supabase.from('reviews').delete().eq('id', id);
+    const { error } = await supabase.from('reviews').delete().eq('id', id);
+    if (error) console.error("Error deleting review:", error);
   },
 
   // --- STATS ---
   async getStats() {
-    const [ordersRes, productsRes, reviewsRes] = await Promise.all([
-      supabase.from('orders').select('*', { count: 'exact', head: true }),
-      supabase.from('products').select('*', { count: 'exact', head: true }),
-      supabase.from('reviews').select('*', { count: 'exact', head: true })
-    ]);
+    try {
+      const { count: orderCount } = await supabase.from('orders').select('*', { count: 'exact', head: true });
+      const { count: productCount } = await supabase.from('products').select('*', { count: 'exact', head: true });
+      const { count: reviewCount } = await supabase.from('reviews').select('*', { count: 'exact', head: true });
+      const { count: pendingCount } = await supabase.from('orders').select('*', { count: 'exact', head: true }).eq('status', OrderStatus.PENDING);
+      const { count: deliveredCount } = await supabase.from('orders').select('*', { count: 'exact', head: true }).eq('status', OrderStatus.DELIVERED);
 
-    const { count: pendingCount } = await supabase.from('orders').select('*', { count: 'exact', head: true }).eq('status', OrderStatus.PENDING);
-    const { count: deliveredCount } = await supabase.from('orders').select('*', { count: 'exact', head: true }).eq('status', OrderStatus.DELIVERED);
-
-    return {
-      totalOrders: ordersRes.count || 0,
-      totalProducts: productsRes.count || 0,
-      totalReviews: reviewsRes.count || 0,
-      pendingOrders: pendingCount || 0,
-      deliveredOrders: deliveredCount || 0
-    };
+      return {
+        totalOrders: orderCount || 0,
+        totalProducts: productCount || 0,
+        totalReviews: reviewCount || 0,
+        pendingOrders: pendingCount || 0,
+        deliveredOrders: deliveredCount || 0
+      };
+    } catch (error) {
+      console.error("Error getting stats:", error);
+      return { totalOrders: 0, totalProducts: 0, totalReviews: 0, pendingOrders: 0, deliveredOrders: 0 };
+    }
   }
 };

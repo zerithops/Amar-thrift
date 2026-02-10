@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Plus, Trash2, Edit2, Upload, X, Save, Loader2 } from 'lucide-react';
 import { firebaseService } from '../../services/firebase';
@@ -52,9 +51,12 @@ const AdminProducts: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     await firebaseService.addProduct({
-        ...formData,
+        name: formData.name,
+        description: formData.description,
+        category: formData.category,
         price: parseFloat(formData.price),
-        stock: parseInt(formData.stock)
+        stock: parseInt(formData.stock),
+        images: formData.image ? [formData.image] : []
     });
     setLoading(false);
     setView('list');
@@ -94,7 +96,7 @@ const AdminProducts: React.FC = () => {
            {products.map(product => (
              <div key={product.id} className="bg-[#141414] border border-white/5 rounded-2xl overflow-hidden group">
                <div className="relative aspect-[4/5] overflow-hidden">
-                 <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                 <img src={product.images && product.images.length > 0 ? product.images[0] : ''} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                  <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button onClick={() => handleDelete(product.id!)} className="p-2 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 transition-colors">
                       <Trash2 size={16} />
