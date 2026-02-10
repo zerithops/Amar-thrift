@@ -1,103 +1,190 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Plus, Trash2, Package, Search } from 'lucide-react';
-import { firebaseService } from '../services/firebase';
-import { Product } from '../types';
+import { Plus, Trash2, Edit2, Upload, X, Save, Loader2 } from 'lucide-react';
+import { firebaseService } from '../../services/firebase';
+import { Product, Category } from '../../types';
+
+const CATEGORIES: Category[] = ['T-Shirt', 'Hoodie', 'Jacket', 'Pants', 'Sweater', 'Accessories'];
 
 const AdminProducts: React.FC = () => {
+  const [view, setView] = React.useState<'list' | 'add'>('list');
   const [products, setProducts] = React.useState<Product[]>([]);
-  const [searchTerm, setSearchTerm] = React.useState('');
-  const [loading, setLoading] = React.useState(true);
+  const [loading, setLoading] = React.useState(false);
+  
+  // Form State
+  const [formData, setFormData] = React.useState({
+    name: '',
+    imagePreview: '', // For display only
+    description: '',
+    price: '',
+    category: 'T-Shirt' as Category,
+    stock: '1'
+  });
+  const [imageFile, setImageFile] = React.useState<File | null>(null);
 
-  const fetchProducts = React.useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await firebaseService.getProducts();
-      setProducts(data);
-    } catch (error) {
-      console.error("Failed to load products", error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const fetchProducts = async () => {
+    const data = await firebaseService.getProducts();
+    setProducts(data);
+  };
 
   React.useEffect(() => {
     fetchProducts();
-  }, [fetchProducts]);
+  }, []);
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('Delete this product? This cannot be undone.')) {
+    if (confirm('Are you sure you want to delete this product?')) {
       await firebaseService.deleteProduct(id);
       fetchProducts();
     }
   };
 
-  const filteredProducts = products.filter(p => 
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    p.category.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Use URL.createObjectURL for preview instead of Base64
+      const previewUrl = URL.createObjectURL(file);
+      setFormData(prev => ({ ...prev, imagePreview: previewUrl }));
+      setImageFile(file);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      let imageUrl = '';
+      if (imageFile) {
+        // Upload to Supabase using robust service
+        imageUrl = await firebaseService.uploadFile(imageFile);
+      }
+
+      await firebaseService.addProduct({
+          name: formData.name,
+          description: formData.description,
+          category: formData.category,
+          price: parseFloat(formData.price),
+          stock: parseInt(formData.stock),
+          images: imageUrl ? [imageUrl] : []
+      });
+
+      setLoading(false);
+      setView('list');
+      fetchProducts();
+      
+      // Reset form
+      setFormData({ name: '', imagePreview: '', description: '', price: '', category: 'T-Shirt', stock: '1' });
+      setImageFile(null);
+
+    } catch (error: any) {
+      console.error(error);
+      alert(`Upload Failed: ${error.message}`);
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12 bg-brand-gray min-h-screen">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+    <div className="space-y-8">
+      <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-4xl font-heading font-bold text-brand-black">Inventory</h1>
-          <p className="text-gray-500 mt-1">Manage your storefront items.</p>
+          <h2 className="text-3xl font-heading font-bold text-white">Inventory</h2>
+          <p className="text-white/40 text-sm">Manage your product catalog.</p>
         </div>
-        <Link to="/add-product" className="flex items-center space-x-2 px-8 py-4 bg-brand-black text-white rounded-xl font-bold transition-all shadow-lg hover:bg-brand-blue hover:shadow-xl">
-          <Plus size={20} />
-          <span>ADD PRODUCT</span>
-        </Link>
+        {view === 'list' ? (
+          <button 
+            onClick={() => setView('add')}
+            className="flex items-center space-x-2 px-6 py-3 bg-[#e63946] hover:bg-[#d62839] text-white rounded-xl font-bold transition-all shadow-lg shadow-red-900/20"
+          >
+            <Plus size={18} />
+            <span>Add Item</span>
+          </button>
+        ) : (
+          <button 
+            onClick={() => setView('list')}
+            className="flex items-center space-x-2 px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold transition-all"
+          >
+            <X size={18} />
+            <span>Cancel</span>
+          </button>
+        )}
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-        <input
-          type="text"
-          placeholder="Search products or categories..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full bg-white border border-gray-200 rounded-2xl px-12 py-5 text-brand-black focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue transition-all shadow-soft"
-        />
-      </div>
-
-      {loading ? (
-        <div className="text-center py-24 text-gray-400">Loading inventory...</div>
-      ) : filteredProducts.length === 0 ? (
-        <div className="text-center py-24 bg-white rounded-3xl border border-dashed border-gray-200 shadow-soft">
-          <Package size={48} className="mx-auto text-gray-300 mb-4" />
-          <p className="text-gray-500">No products found matching your criteria.</p>
+      {view === 'list' ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+           {products.map(product => (
+             <div key={product.id} className="bg-[#141414] border border-white/5 rounded-2xl overflow-hidden group">
+               <div className="relative aspect-[4/5] overflow-hidden">
+                 <img src={product.images && product.images.length > 0 ? product.images[0] : ''} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                 <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => handleDelete(product.id!)} className="p-2 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 transition-colors">
+                      <Trash2 size={16} />
+                    </button>
+                 </div>
+               </div>
+               <div className="p-4">
+                 <div className="flex justify-between items-start mb-2">
+                    <div>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-[#e63946]">{product.category}</p>
+                        <h3 className="text-white font-bold truncate pr-2">{product.name}</h3>
+                    </div>
+                    <p className="text-white font-mono text-sm">৳{product.price}</p>
+                 </div>
+                 <p className="text-white/40 text-xs line-clamp-2">{product.description}</p>
+               </div>
+             </div>
+           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProducts.map((p, idx) => (
-            <motion.div key={p.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }} className="bg-white border border-gray-100 rounded-2xl p-4 flex items-center space-x-6 shadow-soft hover:shadow-hover transition-all group">
-              <div className="w-24 h-24 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100 relative">
-                {p.images && p.images.length > 0 ? (
-                  <img src={p.images[0]} alt={p.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-400">
-                    <Package size={24} />
-                  </div>
-                )}
-                {p.images && p.images.length > 1 && (
-                    <div className="absolute bottom-1 right-1 bg-black/50 text-white text-[10px] px-1.5 rounded-full font-bold">+{p.images.length - 1}</div>
-                )}
+        <div className="max-w-2xl mx-auto bg-[#141414] border border-white/5 p-8 rounded-2xl">
+           <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-2">
+                 <label className="text-xs font-bold text-white/50 uppercase tracking-widest">Product Image</label>
+                 <div className="w-full aspect-video bg-black/40 border-2 border-dashed border-white/10 rounded-xl flex flex-col items-center justify-center relative overflow-hidden group hover:border-[#e63946]/50 transition-colors">
+                    {formData.imagePreview ? (
+                        <img src={formData.imagePreview} className="w-full h-full object-cover" alt="Preview" />
+                    ) : (
+                        <div className="text-center">
+                            <Upload className="mx-auto text-white/30 mb-2" />
+                            <p className="text-xs text-white/30">Click to upload</p>
+                        </div>
+                    )}
+                    <input type="file" onChange={handleImageUpload} className="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" />
+                 </div>
               </div>
-              <div className="flex-grow overflow-hidden">
-                <p className="text-brand-blue text-[10px] font-bold uppercase tracking-widest">{p.category}</p>
-                <h3 className="text-lg font-bold text-brand-black truncate">{p.name}</h3>
-                <div className="flex items-center justify-between mt-2">
-                  <p className="text-brand-black font-heading font-bold">৳ {p.price.toLocaleString()}</p>
-                  <div className="flex items-center space-x-2">
-                    <button onClick={() => handleDelete(p.id!)} className="p-2 text-gray-400 hover:text-red-500 transition-colors"><Trash2 size={16}/></button>
-                  </div>
-                </div>
+
+              <div className="grid grid-cols-2 gap-6">
+                 <div className="space-y-2">
+                    <label className="text-xs font-bold text-white/50 uppercase tracking-widest">Name</label>
+                    <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white focus:border-[#e63946] outline-none" />
+                 </div>
+                 <div className="space-y-2">
+                    <label className="text-xs font-bold text-white/50 uppercase tracking-widest">Category</label>
+                    <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value as Category})} className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white focus:border-[#e63946] outline-none">
+                        {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                 </div>
               </div>
-            </motion.div>
-          ))}
+
+              <div className="grid grid-cols-2 gap-6">
+                 <div className="space-y-2">
+                    <label className="text-xs font-bold text-white/50 uppercase tracking-widest">Price (৳)</label>
+                    <input required type="number" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white focus:border-[#e63946] outline-none" />
+                 </div>
+                 <div className="space-y-2">
+                    <label className="text-xs font-bold text-white/50 uppercase tracking-widest">Stock</label>
+                    <input required type="number" value={formData.stock} onChange={e => setFormData({...formData, stock: e.target.value})} className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white focus:border-[#e63946] outline-none" />
+                 </div>
+              </div>
+
+              <div className="space-y-2">
+                    <label className="text-xs font-bold text-white/50 uppercase tracking-widest">Description</label>
+                    <textarea required rows={4} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white focus:border-[#e63946] outline-none resize-none" />
+              </div>
+
+              <button disabled={loading} type="submit" className="w-full bg-[#e63946] hover:bg-[#d62839] text-white font-bold py-4 rounded-xl transition-all flex items-center justify-center space-x-2">
+                 {loading ? <Loader2 className="animate-spin" /> : <><Save size={20} /> <span>Save Product</span></>}
+              </button>
+           </form>
         </div>
       )}
     </div>

@@ -50,3 +50,10 @@ export interface Review {
   message: string;
   createdAt: number;
 }
+
+export interface ActivityLog {
+  id: string;
+  action: string;
+  details: string;
+  createdAt: number;
+}

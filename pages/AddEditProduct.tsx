@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Loader2, Upload, X } from 'lucide-react';
@@ -6,6 +5,7 @@ import { firebaseService } from '../services/firebase';
 import { Category } from '../types';
 
 const CATEGORIES: Category[] = ['T-Shirt', 'Hoodie', 'Jacket', 'Pants', 'Sweater', 'Accessories'];
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
 const AddEditProduct: React.FC = () => {
   const navigate = useNavigate();
@@ -40,7 +40,7 @@ const AddEditProduct: React.FC = () => {
     if (!files || files.length === 0) return;
 
     // Convert FileList to array
-    const fileArray = Array.from(files);
+    const fileArray = Array.from(files) as File[];
     
     // Validations
     if (selectedFiles.length + fileArray.length > 6) {
@@ -53,9 +53,9 @@ const AddEditProduct: React.FC = () => {
     const newPreviews: string[] = [];
 
     for (const file of fileArray) {
-       // Size check (5MB)
-       if (file.size > 5 * 1024 * 1024) {
-         alert(`File "${file.name}" is too large (Max 5MB). Skipped.`);
+       // Size check (50MB)
+       if (file.size > MAX_FILE_SIZE) {
+         alert(`File "${file.name}" is too large (Max 50MB). Skipped.`);
          continue;
        }
        newFiles.push(file);
@@ -97,7 +97,7 @@ const AddEditProduct: React.FC = () => {
            imageUrls.push(url);
         } catch (uploadError: any) {
            console.error(uploadError);
-           alert(`Failed to upload image "${file.name}". Please check your internet connection and try again.`);
+           alert(`Error: ${uploadError.message}. Please check your internet connection and try again.`);
            setLoading(false);
            return; // Stop the entire process if one image fails to ensure data integrity
         }

@@ -1,6 +1,6 @@
 
 import { supabase } from '../lib/supabaseClient';
-import { Order, OrderStatus, PaymentStatus, Product, Review } from '../types';
+import { Order, OrderStatus, PaymentStatus, Product, Review, ActivityLog } from '../types';
 
 export const firebaseService = {
   // --- HELPERS ---
@@ -9,41 +9,90 @@ export const firebaseService = {
     return new Date(isoString).getTime();
   },
 
+  // --- LOGGING ---
+  async logActivity(action: string, details: string): Promise<void> {
+    try {
+      await supabase.from('activity_logs').insert([{
+        action,
+        details,
+        created_at: new Date().toISOString()
+      }]);
+    } catch (error) {
+      // Fail silently to not disrupt main flow, just warn
+      console.warn("Failed to write to activity_logs:", error);
+    }
+  },
+
+  async getActivityLogs(): Promise<ActivityLog[]> {
+    const { data, error } = await supabase
+      .from('activity_logs')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    if (error) {
+      console.warn("Error fetching logs:", error);
+      return [];
+    }
+
+    return data.map((log: any) => ({
+      id: log.id,
+      action: log.action,
+      details: log.details,
+      createdAt: this.toTimestamp(log.created_at)
+    }));
+  },
+
   // --- STORAGE (Product Images) ---
   async uploadFile(file: File): Promise<string> {
-    try {
-      // Preserve extension (e.g., .png, .jpg)
-      const fileExt = file.name.split('.').pop() || 'png';
-      // Sanitize filename to prevent issues with special characters
-      const fileNameRaw = file.name.substring(0, file.name.lastIndexOf('.'));
-      const sanitizedName = fileNameRaw.replace(/[^a-zA-Z0-9]/g, '-').substring(0, 50); // Limit length
-      const fileName = `${Date.now()}-${sanitizedName}.${fileExt}`;
-      
-      // Path inside the bucket
-      const filePath = `${fileName}`;
+    const RETRY_COUNT = 3;
+    let attempt = 0;
+    let lastError: any;
 
-      // Upload to 'product-images' bucket
-      const { data, error } = await supabase.storage
-        .from('product-images')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
+    // 1. Sanitize Filename
+    const fileExt = file.name.split('.').pop()?.toLowerCase() || 'png';
+    // Remove special chars, spaces, keep only alphanumeric and dashes
+    const cleanName = file.name.substring(0, file.name.lastIndexOf('.'))
+      .replace(/[^a-zA-Z0-9]/g, '-')
+      .replace(/-+/g, '-'); // Collapse multiple dashes
+    
+    // Unique filename: Timestamp + Random(8 chars) + CleanName
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 10)}-${cleanName}.${fileExt}`;
+    const filePath = `${fileName}`;
 
-      if (error) {
-        throw error;
+    // 2. Retry Loop
+    while (attempt < RETRY_COUNT) {
+      try {
+        const { data, error } = await supabase.storage
+          .from('product-images')
+          .upload(filePath, file, {
+            cacheControl: '3600',
+            upsert: false
+          });
+
+        if (error) throw error;
+
+        // 3. Get Public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('product-images')
+          .getPublicUrl(filePath);
+
+        return publicUrl;
+      } catch (error: any) {
+        lastError = error;
+        attempt++;
+        console.warn(`Upload attempt ${attempt} failed for ${file.name}:`, error.message);
+        
+        // Wait 1 second before retrying (simple backoff)
+        if (attempt < RETRY_COUNT) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
       }
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('product-images')
-        .getPublicUrl(filePath);
-
-      return publicUrl;
-    } catch (error: any) {
-      console.error('Supabase Upload Error:', error);
-      throw new Error(`Upload failed for ${file.name}: ${error.message || 'Unknown error'}`);
     }
+
+    // 4. Final Error Handling
+    console.error('Final Supabase Upload Error:', lastError);
+    throw new Error(`Failed to upload ${file.name} after ${RETRY_COUNT} attempts. ${lastError?.message || 'Check network connection.'}`);
   },
 
   // --- ORDERS ---
@@ -74,6 +123,7 @@ export const firebaseService = {
       throw error;
     }
 
+    // Optional: Log when a user creates an order? Usually we track Admin actions, but let's leave it clean.
     return {
       ...orderData,
       id: data.id,
@@ -150,6 +200,13 @@ export const firebaseService = {
 
     const { error } = await supabase.from('orders').update(dbUpdates).eq('id', id);
     if (error) console.error("Error updating order:", error);
+    else {
+      // Log details
+      const details = Object.keys(updates)
+        .map(key => `${key}: ${updates[key as keyof Order]}`)
+        .join(', ');
+      await this.logActivity('UPDATE_ORDER', `Updated Order ${id} - ${details}`);
+    }
   },
 
   // --- PRODUCTS ---
@@ -195,12 +252,15 @@ export const firebaseService = {
       console.error("Error adding product:", error);
       throw error;
     }
+
+    await this.logActivity('ADD_PRODUCT', `Added new product: ${product.name}`);
     return data.id;
   },
 
   async deleteProduct(id: string): Promise<void> {
     const { error } = await supabase.from('products').delete().eq('id', id);
     if (error) console.error("Error deleting product:", error);
+    else await this.logActivity('DELETE_PRODUCT', `Deleted product ID: ${id}`);
   },
 
   // --- REVIEWS ---
@@ -233,6 +293,7 @@ export const firebaseService = {
   async deleteReview(id: string): Promise<void> {
     const { error } = await supabase.from('reviews').delete().eq('id', id);
     if (error) console.error("Error deleting review:", error);
+    else await this.logActivity('DELETE_REVIEW', `Deleted review ID: ${id}`);
   },
 
   // --- STATS ---

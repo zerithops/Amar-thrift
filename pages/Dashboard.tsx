@@ -2,13 +2,14 @@
 import React from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { LogOut, RefreshCcw, Package, Clock, User, Phone, MapPin, Mail, ShoppingCart, Plus, List, CreditCard, DollarSign, Truck, Edit2, Save, X, Star } from 'lucide-react';
+import { LogOut, RefreshCcw, Package, Clock, User, Phone, MapPin, Mail, ShoppingCart, Plus, List, CreditCard, DollarSign, Truck, Edit2, Save, X, Star, Activity } from 'lucide-react';
 import { firebaseService } from '../services/firebase';
-import { Order, OrderStatus, PaymentStatus } from '../types';
+import { Order, OrderStatus, PaymentStatus, ActivityLog } from '../types';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [orders, setOrders] = React.useState<Order[]>([]);
+  const [logs, setLogs] = React.useState<ActivityLog[]>([]);
   const [stats, setStats] = React.useState({ totalOrders: 0, totalProducts: 0, totalReviews: 0, pendingOrders: 0, deliveredOrders: 0 });
   const [loading, setLoading] = React.useState(true);
   const [editingId, setEditingId] = React.useState<string | null>(null);
@@ -24,8 +25,11 @@ const Dashboard: React.FC = () => {
     setLoading(true);
     const orderData = await firebaseService.getOrders();
     const statData = await firebaseService.getStats();
+    const logData = await firebaseService.getActivityLogs();
+    
     setOrders(orderData);
     setStats(statData);
+    setLogs(logData);
     setLoading(false);
   }, []);
 
@@ -241,6 +245,33 @@ const Dashboard: React.FC = () => {
             ))}
           </div>
         )}
+      </div>
+
+      {/* Activity Log Section */}
+      <div className="space-y-6 pt-6 border-t border-gray-200">
+        <h2 className="text-2xl font-heading font-bold text-brand-black">Activity Log</h2>
+        <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-soft max-h-96 overflow-y-auto">
+          {logs.length === 0 ? (
+            <div className="text-center py-8 text-gray-400">No recent activity recorded.</div>
+          ) : (
+            <ul className="space-y-4">
+              {logs.map((log) => (
+                <li key={log.id} className="flex items-start space-x-3 pb-4 border-b border-gray-50 last:border-0 last:pb-0">
+                  <div className="p-2 bg-brand-blue/10 rounded-full text-brand-blue mt-0.5">
+                    <Activity size={14} />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex justify-between items-start">
+                      <p className="text-sm font-bold text-brand-black uppercase tracking-wide">{log.action.replace(/_/g, ' ')}</p>
+                      <span className="text-[10px] text-gray-400 whitespace-nowrap">{new Date(log.createdAt).toLocaleString()}</span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-0.5">{log.details}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
     </div>
   );
