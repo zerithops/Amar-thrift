@@ -8,13 +8,13 @@ const FALLBACK_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 // Robustly get environment variables
 const getEnv = (key: string) => {
   try {
-    // In Vite, import.meta.env is the standard. We use 'any' cast to avoid TS strictness issues if types aren't perfect.
+    // In Vite, import.meta.env is the standard.
+    // We use 'any' cast to avoid TS strictness issues if types aren't perfectly aligned in dev environment.
     const meta = import.meta as any;
     if (meta && meta.env && meta.env[key]) {
       return meta.env[key];
     }
   } catch (e) {
-    // Prevent crash if import.meta is accessed in a non-module context
     console.warn('Error accessing environment variable:', key);
   }
   return '';

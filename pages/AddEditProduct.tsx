@@ -50,30 +50,41 @@ const AddEditProduct: React.FC = () => {
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (formData.images.length >= 6) {
-        alert('Maximum 6 images allowed.');
-        return;
-      }
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit check
-        alert('Image size should be less than 5MB');
-        return;
-      }
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-      setUploading(true);
-      try {
+    if (formData.images.length + files.length > 6) {
+      alert('Maximum 6 images allowed.');
+      if (e.target) e.target.value = ''; // Reset input
+      return;
+    }
+
+    setUploading(true);
+    const newImages: string[] = [];
+    // Explicitly cast to File[] to avoid 'unknown' type inference issues
+    const fileArray = Array.from(files) as File[];
+
+    try {
+      for (const file of fileArray) {
+        if (file.size > 5 * 1024 * 1024) { 
+          alert(`File ${file.name} is too large (max 5MB)`);
+          continue; 
+        }
         // Uploads to Supabase storage and gets public URL
         const publicUrl = await firebaseService.uploadFile(file);
-        setFormData(prev => ({ ...prev, images: [...prev.images, publicUrl] }));
-      } catch (error) {
-        alert('Failed to upload image. Please try again.');
-        console.error(error);
-      } finally {
-        setUploading(false);
-        // Reset input
-        e.target.value = '';
+        newImages.push(publicUrl);
       }
+      
+      if (newImages.length > 0) {
+        setFormData(prev => ({ ...prev, images: [...prev.images, ...newImages] }));
+      }
+    } catch (error) {
+      alert('Failed to upload some images. Please try again.');
+      console.error(error);
+    } finally {
+      setUploading(false);
+      // Reset input to allow selecting the same files again if needed
+      if (e.target) e.target.value = '';
     }
   };
 
@@ -147,6 +158,7 @@ const AddEditProduct: React.FC = () => {
                   <div className={`relative aspect-square bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl transition-colors flex flex-col items-center justify-center cursor-pointer group ${uploading ? 'opacity-50 pointer-events-none' : 'hover:border-brand-blue/50'}`}>
                     <input 
                       type="file" 
+                      multiple
                       accept="image/*"
                       onChange={handleImageUpload}
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
@@ -155,7 +167,7 @@ const AddEditProduct: React.FC = () => {
                     <div className="p-3 bg-white rounded-full mb-2 group-hover:scale-110 transition-transform shadow-sm">
                       {uploading ? <Loader2 size={20} className="animate-spin text-brand-blue" /> : <Upload size={20} className="text-gray-400 group-hover:text-brand-blue" />}
                     </div>
-                    <p className="text-xs text-gray-500 font-medium">{uploading ? 'Uploading...' : 'Add Image'}</p>
+                    <p className="text-xs text-gray-500 font-medium">{uploading ? 'Uploading...' : 'Add Images'}</p>
                   </div>
                 )}
               </div>
