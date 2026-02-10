@@ -13,6 +13,15 @@ export enum PaymentStatus {
   REFUNDED = 'Refunded'
 }
 
+export interface CartItem {
+  productId: string;
+  name: string;
+  price: number;
+  image: string;
+  quantity: number;
+  category: string;
+}
+
 export interface Order {
   id?: string;
   orderId: string; // Human readable short ID (Token)
@@ -21,8 +30,12 @@ export interface Order {
   phone: string;
   city: 'Dhaka' | 'Outside Dhaka';
   address: string;
-  productName: string;
-  price: number;
+  items: CartItem[]; // Changed from single productName to array of items
+  
+  // Legacy fields
+  productName?: string;
+  price?: number;
+
   deliveryCharge: number;
   total: number;
   status: OrderStatus;
@@ -36,7 +49,7 @@ export interface Product {
   id?: string;
   name: string;
   price: number;
-  images: string[]; // Changed to array of strings
+  images: string[];
   description: string;
   category: Category;
   stock: number;

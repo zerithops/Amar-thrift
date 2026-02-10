@@ -14,7 +14,6 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = React.useState(true);
   const [editingId, setEditingId] = React.useState<string | null>(null);
   
-  // Temp state for editing
   const [editForm, setEditForm] = React.useState({
     deliveryCharge: 0,
     status: OrderStatus.PENDING,
@@ -51,7 +50,15 @@ const Dashboard: React.FC = () => {
   };
 
   const saveEdit = async (id: string, originalOrder: Order) => {
-    const newTotal = originalOrder.price + Number(editForm.deliveryCharge);
+    // If we have items, re-calculate subtotal, otherwise use legacy price
+    let subtotal = 0;
+    if (originalOrder.items && originalOrder.items.length > 0) {
+        subtotal = originalOrder.items.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+    } else {
+        subtotal = (originalOrder as any).price || 0;
+    }
+
+    const newTotal = subtotal + Number(editForm.deliveryCharge);
     
     await firebaseService.updateOrder(id, {
       deliveryCharge: Number(editForm.deliveryCharge),
@@ -170,9 +177,20 @@ const Dashboard: React.FC = () => {
 
                   {/* Product Info */}
                   <div className="lg:col-span-3 space-y-2">
-                    <p className="text-[10px] font-bold text-brand-blue uppercase tracking-widest">Item</p>
-                    <p className="text-lg font-bold text-brand-black">{order.productName}</p>
-                    <p className="text-gray-500 text-xs text-ellipsis overflow-hidden whitespace-nowrap">{order.address}</p>
+                    <p className="text-[10px] font-bold text-brand-blue uppercase tracking-widest">Items ({order.items?.length || 1})</p>
+                    {order.items && order.items.length > 0 ? (
+                        <div className="space-y-1">
+                            {order.items.map((item, idx) => (
+                                <div key={idx} className="flex justify-between text-sm">
+                                    <span className="text-brand-black font-medium">{item.quantity}x {item.name}</span>
+                                    <span className="text-gray-400">৳{item.price}</span>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-lg font-bold text-brand-black">{(order as any).productName}</p>
+                    )}
+                    <p className="text-gray-500 text-xs text-ellipsis overflow-hidden whitespace-nowrap pt-2">{order.address}</p>
                   </div>
 
                   {/* Financials - Editable */}
@@ -202,7 +220,6 @@ const Dashboard: React.FC = () => {
                       </div>
                     ) : (
                       <div className="space-y-1">
-                         <div className="flex justify-between text-xs text-gray-600"><span>Price:</span> <span>৳{order.price}</span></div>
                          <div className="flex justify-between text-xs text-gray-600"><span>Delivery:</span> <span>৳{order.deliveryCharge || 0}</span></div>
                          <div className="flex justify-between text-sm font-bold text-brand-black border-t border-gray-100 pt-1"><span>Total:</span> <span>৳{order.total}</span></div>
                          <div className={`text-xs font-bold uppercase mt-1 ${getPaymentColor(order.paymentStatus || PaymentStatus.PENDING)}`}>

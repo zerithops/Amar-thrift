@@ -1,6 +1,6 @@
 
 import { supabase } from '../lib/supabaseClient';
-import { Order, OrderStatus, PaymentStatus, Product, Review, ActivityLog } from '../types';
+import { Order, OrderStatus, PaymentStatus, Product, Review, ActivityLog, CartItem } from '../types';
 
 export const firebaseService = {
   // --- HELPERS ---
@@ -18,7 +18,6 @@ export const firebaseService = {
         created_at: new Date().toISOString()
       }]);
     } catch (error) {
-      // Fail silently to not disrupt main flow, just warn
       console.warn("Failed to write to activity_logs:", error);
     }
   },
@@ -43,67 +42,30 @@ export const firebaseService = {
     }));
   },
 
-  // --- STORAGE (Product Images) ---
+  // --- STORAGE ---
   async uploadFile(file: File): Promise<string> {
-    // 0. Explicit Network Check
     if (typeof navigator !== 'undefined' && navigator.onLine === false) {
       throw new Error("You appear to be offline. Please check your internet connection.");
     }
 
     const RETRY_LIMIT = 3;
     let attempt = 0;
-
-    // 1. Sanitize Filename (Strict: Alphanumeric only)
     const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-    const nameWithoutExt = file.name.substring(0, file.name.lastIndexOf('.'));
-    // Remove ALL spaces and special characters, keep only letters and numbers
-    const cleanName = nameWithoutExt.replace(/[^a-zA-Z0-9]/g, ''); 
-    // Format: Timestamp_CleanName.ext
+    const cleanName = file.name.substring(0, file.name.lastIndexOf('.')).replace(/[^a-zA-Z0-9]/g, ''); 
     const fileName = `${Date.now()}_${cleanName}.${fileExt}`;
-    const filePath = fileName;
 
-    // 2. Retry Loop
     while (attempt < RETRY_LIMIT) {
       try {
         attempt++;
-        
-        // Upload
-        const { data, error } = await supabase.storage
-          .from('product-images')
-          .upload(filePath, file, {
-            cacheControl: '3600',
-            upsert: false
-          });
-
-        if (error) {
-          // Log FULL Supabase error object for debugging
-          console.error(`Supabase Upload Error (Attempt ${attempt}/${RETRY_LIMIT}):`, {
-            message: error.message,
-            name: error.name,
-            details: error
-          });
-          throw error; // Throw to catch block for retry logic
-        }
-
-        // Get URL
-        const { data: { publicUrl } } = supabase.storage
-          .from('product-images')
-          .getPublicUrl(filePath);
-
+        const { error } = await supabase.storage.from('product-images').upload(fileName, file, { cacheControl: '3600', upsert: false });
+        if (error) throw error;
+        const { data: { publicUrl } } = supabase.storage.from('product-images').getPublicUrl(fileName);
         return publicUrl;
-
       } catch (error: any) {
-        // If max retries reached, throw the REAL error message
-        if (attempt >= RETRY_LIMIT) {
-          console.error("Final Upload Failure:", error);
-          throw new Error(error.message || "Unknown error from Supabase storage.");
-        }
-        
-        // Wait before retry (1s, 2s, 3s...)
+        if (attempt >= RETRY_LIMIT) throw new Error(error.message || "Unknown error from Supabase storage.");
         await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
       }
     }
-    
     throw new Error("Unexpected upload failure");
   },
 
@@ -111,6 +73,8 @@ export const firebaseService = {
   async addOrder(orderData: Omit<Order, 'id' | 'status' | 'paymentStatus' | 'createdAt' | 'orderId'>): Promise<Order> {
     const orderId = Math.random().toString(36).substr(2, 6).toUpperCase();
     
+    // We store items as JSONB in Supabase.
+    // Ensure you have run: alter table orders add column items jsonb;
     const { data, error } = await supabase
       .from('orders')
       .insert([{
@@ -120,8 +84,7 @@ export const firebaseService = {
         phone: orderData.phone,
         city: orderData.city,
         address: orderData.address,
-        product_name: orderData.productName,
-        price: orderData.price,
+        items: orderData.items, // Now storing array
         delivery_charge: orderData.deliveryCharge,
         total: orderData.total,
         status: OrderStatus.PENDING,
@@ -151,10 +114,7 @@ export const firebaseService = {
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error("Error fetching orders:", error);
-      return [];
-    }
+    if (error) return [];
 
     return data.map((o: any) => ({
       id: o.id,
@@ -164,8 +124,9 @@ export const firebaseService = {
       phone: o.phone,
       city: o.city,
       address: o.address,
-      productName: o.product_name,
-      price: o.price,
+      items: o.items || [], // Handle migration safely
+      productName: o.product_name, // Legacy support
+      price: o.price, // Legacy support
       deliveryCharge: o.delivery_charge,
       total: o.total,
       status: o.status as OrderStatus,
@@ -192,8 +153,10 @@ export const firebaseService = {
       phone: data.phone,
       city: data.city,
       address: data.address,
-      productName: data.product_name,
-      price: data.price,
+      items: data.items || [],
+      // Legacy fields for backward compatibility
+      productName: data.product_name || (data.items ? `${data.items.length} items` : 'Unknown'),
+      price: data.price, 
       deliveryCharge: data.delivery_charge,
       total: data.total,
       status: data.status as OrderStatus,
@@ -212,10 +175,7 @@ export const firebaseService = {
     const { error } = await supabase.from('orders').update(dbUpdates).eq('id', id);
     if (error) console.error("Error updating order:", error);
     else {
-      // Log details
-      const details = Object.keys(updates)
-        .map(key => `${key}: ${updates[key as keyof Order]}`)
-        .join(', ');
+      const details = Object.keys(updates).map(key => `${key}: ${updates[key as keyof Order]}`).join(', ');
       await this.logActivity('UPDATE_ORDER', `Updated Order ${id} - ${details}`);
     }
   },
@@ -227,16 +187,12 @@ export const firebaseService = {
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error("Error fetching products:", error);
-      return [];
-    }
+    if (error) return [];
 
     return data.map((p: any) => ({
       id: p.id,
       name: p.name,
       price: p.price,
-      // Handle both array and potential nulls safely
       images: Array.isArray(p.images) ? p.images : (p.images ? [p.images] : []), 
       description: p.description,
       category: p.category,
@@ -259,30 +215,20 @@ export const firebaseService = {
       .select()
       .single();
 
-    if (error) {
-      console.error("Error adding product:", error);
-      throw error;
-    }
-
+    if (error) throw error;
     await this.logActivity('ADD_PRODUCT', `Added new product: ${product.name}`);
     return data.id;
   },
 
   async deleteProduct(id: string): Promise<void> {
     const { error } = await supabase.from('products').delete().eq('id', id);
-    if (error) console.error("Error deleting product:", error);
-    else await this.logActivity('DELETE_PRODUCT', `Deleted product ID: ${id}`);
+    if (!error) await this.logActivity('DELETE_PRODUCT', `Deleted product ID: ${id}`);
   },
 
   // --- REVIEWS ---
   async getReviews(): Promise<Review[]> {
-    const { data, error } = await supabase
-      .from('reviews')
-      .select('*')
-      .order('created_at', { ascending: false });
-
+    const { data, error } = await supabase.from('reviews').select('*').order('created_at', { ascending: false });
     if (error) return [];
-
     return data.map((r: any) => ({
       id: r.id,
       name: r.name,
@@ -293,18 +239,16 @@ export const firebaseService = {
   },
 
   async addReview(review: Omit<Review, 'id' | 'createdAt'>): Promise<void> {
-    const { error } = await supabase.from('reviews').insert([{
+    await supabase.from('reviews').insert([{
       name: review.name,
       rating: review.rating,
       message: review.message
     }]);
-    if (error) console.error("Error adding review:", error);
   },
 
   async deleteReview(id: string): Promise<void> {
     const { error } = await supabase.from('reviews').delete().eq('id', id);
-    if (error) console.error("Error deleting review:", error);
-    else await this.logActivity('DELETE_REVIEW', `Deleted review ID: ${id}`);
+    if (!error) await this.logActivity('DELETE_REVIEW', `Deleted review ID: ${id}`);
   },
 
   // --- STATS ---
@@ -324,7 +268,6 @@ export const firebaseService = {
         deliveredOrders: deliveredCount || 0
       };
     } catch (error) {
-      console.error("Error getting stats:", error);
       return { totalOrders: 0, totalProducts: 0, totalReviews: 0, pendingOrders: 0, deliveredOrders: 0 };
     }
   }

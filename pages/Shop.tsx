@@ -1,17 +1,19 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link, useNavigate } from 'react-router-dom';
-import { Loader2, ShoppingBag, X, ChevronLeft, ChevronRight, ZoomIn } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Loader2, ShoppingBag, X, ChevronLeft, ChevronRight, ZoomIn, Check } from 'lucide-react';
 import { firebaseService } from '../services/firebase';
 import { Product } from '../types';
+import { useCart } from '../context/CartContext';
 
 const Shop: React.FC = () => {
   const [products, setProducts] = React.useState<Product[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [selectedProduct, setSelectedProduct] = React.useState<Product | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
-  const navigate = useNavigate();
+  const { addToCart } = useCart();
+  const [added, setAdded] = React.useState(false);
 
   React.useEffect(() => {
     firebaseService.getProducts().then(data => {
@@ -23,6 +25,7 @@ const Shop: React.FC = () => {
   const openModal = (product: Product) => {
     setSelectedProduct(product);
     setCurrentImageIndex(0);
+    setAdded(false);
     document.body.style.overflow = 'hidden';
   };
 
@@ -43,6 +46,13 @@ const Shop: React.FC = () => {
     if (selectedProduct && selectedProduct.images) {
       setCurrentImageIndex((prev) => (prev - 1 + selectedProduct.images.length) % selectedProduct.images.length);
     }
+  };
+
+  const handleAddToCart = (product: Product, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    addToCart(product);
+    setAdded(true);
+    setTimeout(() => setAdded(false), 2000);
   };
 
   const formatPrice = (price: number) => `৳ ${price.toLocaleString()}`;
@@ -115,8 +125,11 @@ const Shop: React.FC = () => {
                   </div>
                   <div className="pt-4 border-t border-gray-100 flex items-center justify-between">
                     <span className="text-xl font-heading font-bold text-brand-black">{formatPrice(product.price)}</span>
-                    <button className="text-xs bg-brand-black text-white px-3 py-1.5 rounded-full font-bold uppercase tracking-wider hover:bg-brand-blue transition-colors">
-                        View
+                    <button 
+                      onClick={(e) => handleAddToCart(product, e)}
+                      className="text-xs bg-brand-black text-white px-3 py-1.5 rounded-full font-bold uppercase tracking-wider hover:bg-brand-blue transition-colors"
+                    >
+                      Add to Cart
                     </button>
                   </div>
                 </div>
@@ -213,14 +226,21 @@ const Shop: React.FC = () => {
 
                 <div className="mt-auto pt-6 border-t border-gray-100">
                   <button 
-                    onClick={() => {
-                      closeModal();
-                      navigate(`/order?product=${encodeURIComponent(selectedProduct.name)}`);
-                    }}
-                    className="w-full bg-brand-black text-white py-4 rounded-xl font-bold uppercase tracking-widest hover:bg-brand-blue transition-all shadow-lg hover:shadow-xl flex items-center justify-center space-x-2"
+                    onClick={() => handleAddToCart(selectedProduct)}
+                    disabled={selectedProduct.stock <= 0}
+                    className="w-full bg-brand-black text-white py-4 rounded-xl font-bold uppercase tracking-widest hover:bg-brand-blue transition-all shadow-lg hover:shadow-xl flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <span>Order Now</span>
-                    <ShoppingBag size={20} />
+                    {added ? (
+                      <>
+                        <Check size={20} />
+                        <span>Added to Cart</span>
+                      </>
+                    ) : (
+                      <>
+                        <ShoppingBag size={20} />
+                        <span>Add to Cart</span>
+                      </>
+                    )}
                   </button>
                 </div>
               </div>

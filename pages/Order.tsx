@@ -1,18 +1,19 @@
 
 import React from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, Loader2, ArrowRight, ShieldCheck, Instagram, Copy } from 'lucide-react';
 import { firebaseService } from '../services/firebase';
-import { Product } from '../types';
+import { useCart } from '../context/CartContext';
 
 const Order: React.FC = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { items, cartTotal, clearCart } = useCart();
   
   const [loading, setLoading] = React.useState(false);
   const [success, setSuccess] = React.useState(false);
   const [createdOrder, setCreatedOrder] = React.useState<any>(null);
-  const [products, setProducts] = React.useState<Product[]>([]);
   
   const [formData, setFormData] = React.useState({
     fullName: '',
@@ -20,28 +21,17 @@ const Order: React.FC = () => {
     phone: '',
     city: 'Dhaka' as 'Dhaka' | 'Outside Dhaka',
     address: '',
-    productName: searchParams.get('product') || '',
-    price: ''
   });
 
-  const price = parseFloat(formData.price) || 0;
-  const deliveryCharge = formData.city === 'Dhaka' ? 70 : 150;
-  const total = price + deliveryCharge;
-
+  // Redirect if cart is empty and no direct product param (backward compatibility)
   React.useEffect(() => {
-    const loadProducts = async () => {
-      const data = await firebaseService.getProducts();
-      setProducts(data);
-      const urlProduct = searchParams.get('product');
-      if (urlProduct) {
-        const found = data.find(p => p.name === urlProduct);
-        if (found) {
-          setFormData(prev => ({ ...prev, price: found.price.toString() }));
-        }
-      }
-    };
-    loadProducts();
-  }, [searchParams]);
+    if (items.length === 0 && !searchParams.get('product') && !success) {
+      navigate('/shop');
+    }
+  }, [items, searchParams, navigate, success]);
+
+  const deliveryCharge = formData.city === 'Dhaka' ? 80 : 120;
+  const total = cartTotal + deliveryCharge;
 
   const INSTAGRAM_LINK = "https://www.instagram.com/amar_thrift_?igsh=OTQwdmgxYnJjZm56";
 
@@ -51,15 +41,17 @@ const Order: React.FC = () => {
     try {
       const order = await firebaseService.addOrder({
         ...formData,
-        price: price,
+        items: items,
         deliveryCharge: deliveryCharge,
         total: total
       });
       setCreatedOrder(order);
       setSuccess(true);
+      clearCart();
       window.scrollTo(0,0);
     } catch (error) {
-      alert('Failed to place order.');
+      console.error(error);
+      alert('Failed to place order. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -67,13 +59,6 @@ const Order: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
-  };
-
-  const handleProductBlur = () => {
-    const found = products.find(p => p.name.toLowerCase() === formData.productName.toLowerCase());
-    if (found) {
-      setFormData(prev => ({ ...prev, price: found.price.toString() }));
-    }
   };
 
   const copyToken = () => {
@@ -134,21 +119,9 @@ const Order: React.FC = () => {
                           <button type="button" onClick={() => setFormData({...formData, city: 'Dhaka'})} className={`py-3 rounded-lg border-2 text-sm font-bold uppercase transition-all ${formData.city === 'Dhaka' ? 'border-brand-blue bg-brand-blue/10 text-brand-blue' : 'border-gray-200 text-gray-400 hover:border-gray-300'}`}>Dhaka</button>
                           <button type="button" onClick={() => setFormData({...formData, city: 'Outside Dhaka'})} className={`py-3 rounded-lg border-2 text-sm font-bold uppercase transition-all ${formData.city === 'Outside Dhaka' ? 'border-brand-blue bg-brand-blue/10 text-brand-blue' : 'border-gray-200 text-gray-400 hover:border-gray-300'}`}>Outside Dhaka</button>
                        </div>
-                    </div>
-                  </div>
-
-                  {/* Product Info */}
-                  <div className="space-y-4">
-                    <h2 className="text-sm font-bold uppercase tracking-widest text-brand-blue border-b border-gray-100 pb-2">Order Details</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                         <label className="text-xs font-bold text-gray-500 uppercase">Product Name</label>
-                         <input required type="text" name="productName" value={formData.productName} onChange={handleChange} onBlur={handleProductBlur} className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-brand-black focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue transition-all" placeholder="Search product..." />
-                      </div>
-                      <div className="space-y-2">
-                         <label className="text-xs font-bold text-gray-500 uppercase">Price (BDT)</label>
-                         <input required type="number" name="price" value={formData.price} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-brand-black focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue transition-all" placeholder="0" />
-                      </div>
+                       <p className="text-xs text-gray-400 mt-1">
+                         Delivery: {formData.city === 'Dhaka' ? '80 BDT' : '120 BDT'}
+                       </p>
                     </div>
                   </div>
                 </form>
@@ -159,10 +132,23 @@ const Order: React.FC = () => {
                 <div className="sticky top-28 bg-white p-8 rounded-2xl shadow-soft border border-gray-100">
                   <h3 className="text-xl font-heading font-bold text-brand-black mb-6">Order Summary</h3>
                   
-                  <div className="space-y-4 mb-8">
+                  {/* Cart List Mini */}
+                  <div className="space-y-3 mb-6 max-h-60 overflow-y-auto custom-scrollbar">
+                    {items.map((item) => (
+                      <div key={item.productId} className="flex justify-between items-center text-sm">
+                         <div className="flex items-center space-x-2">
+                           <span className="text-brand-blue font-bold">{item.quantity}x</span>
+                           <span className="text-gray-700 truncate max-w-[150px]">{item.name}</span>
+                         </div>
+                         <span className="text-gray-900 font-medium">৳ {(item.price * item.quantity).toLocaleString()}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="space-y-4 mb-8 border-t border-gray-100 pt-4">
                     <div className="flex justify-between text-sm text-gray-600">
                       <span>Subtotal</span>
-                      <span className="font-bold text-brand-black">৳ {price.toLocaleString()}</span>
+                      <span className="font-bold text-brand-black">৳ {cartTotal.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-sm text-gray-600">
                       <span>Shipping ({formData.city})</span>
@@ -227,7 +213,7 @@ const Order: React.FC = () => {
                         <span>Pay on Instagram</span>
                     </a>
                     <button 
-                        onClick={() => window.location.reload()}
+                        onClick={() => navigate('/shop')}
                         className="text-sm font-bold text-gray-400 hover:text-brand-black transition-colors"
                     >
                         Return to Shop

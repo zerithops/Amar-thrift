@@ -3,12 +3,14 @@ import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Instagram, Mail, Menu, X, MoreVertical, ShoppingBag } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useCart } from '../context/CartContext';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const [isAdminMenuOpen, setIsAdminMenuOpen] = React.useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { cartCount } = useCart();
 
   React.useEffect(() => {
     setIsMenuOpen(false);
@@ -51,6 +53,17 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
             {/* Right Actions */}
             <div className="flex items-center space-x-4">
+               
+               {/* Cart Icon */}
+               <Link to="/cart" className="relative p-2 text-white/90 hover:text-white transition-colors">
+                 <ShoppingBag size={22} />
+                 {cartCount > 0 && (
+                   <span className="absolute top-0 right-0 bg-brand-black text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-md">
+                     {cartCount}
+                   </span>
+                 )}
+               </Link>
+
                <Link to="/shop" className="hidden md:flex items-center space-x-2 text-sm font-bold bg-white text-brand-blue px-6 py-2.5 rounded-full hover:bg-black hover:text-white transition-all duration-300 shadow-md">
                  <span>Shop Now</span>
                </Link>
@@ -132,6 +145,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                    transition={{ delay: 0.2 }}
                    className="pt-8 border-t border-gray-100"
                 >
+                  <Link to="/cart" onClick={() => setIsMenuOpen(false)} className="block w-full text-center bg-gray-100 text-brand-black py-4 rounded-xl font-bold uppercase tracking-wide text-sm hover:bg-gray-200 transition-colors mb-4">
+                    View Cart ({cartCount})
+                  </Link>
                   <Link to="/shop" onClick={() => setIsMenuOpen(false)} className="block w-full text-center bg-brand-blue text-white py-4 rounded-xl font-bold uppercase tracking-wide text-sm hover:bg-black transition-colors shadow-lg">
                     Start Shopping
                   </Link>
