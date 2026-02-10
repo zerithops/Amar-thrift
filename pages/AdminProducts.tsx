@@ -41,6 +41,10 @@ const AdminProducts: React.FC = () => {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert("File size exceeds 5MB limit.");
+        return;
+      }
       // Use URL.createObjectURL for preview instead of Base64
       const previewUrl = URL.createObjectURL(file);
       setFormData(prev => ({ ...prev, imagePreview: previewUrl }));
@@ -78,7 +82,7 @@ const AdminProducts: React.FC = () => {
 
     } catch (error: any) {
       console.error(error);
-      alert(`Upload Failed: ${error.message}`);
+      alert(`Error: ${error.message}`);
       setLoading(false);
     }
   };

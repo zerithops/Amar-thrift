@@ -45,24 +45,29 @@ export const firebaseService = {
 
   // --- STORAGE (Product Images) ---
   async uploadFile(file: File): Promise<string> {
-    const RETRY_COUNT = 3;
-    let attempt = 0;
-    let lastError: any;
+    // 0. Explicit Network Check
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      throw new Error("You appear to be offline. Please check your internet connection.");
+    }
 
-    // 1. Sanitize Filename
-    const fileExt = file.name.split('.').pop()?.toLowerCase() || 'png';
-    // Remove special chars, spaces, keep only alphanumeric and dashes
-    const cleanName = file.name.substring(0, file.name.lastIndexOf('.'))
-      .replace(/[^a-zA-Z0-9]/g, '-')
-      .replace(/-+/g, '-'); // Collapse multiple dashes
-    
-    // Unique filename: Timestamp + Random(8 chars) + CleanName
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 10)}-${cleanName}.${fileExt}`;
-    const filePath = `${fileName}`;
+    const RETRY_LIMIT = 3;
+    let attempt = 0;
+
+    // 1. Sanitize Filename (Strict: Alphanumeric only)
+    const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+    const nameWithoutExt = file.name.substring(0, file.name.lastIndexOf('.'));
+    // Remove ALL spaces and special characters, keep only letters and numbers
+    const cleanName = nameWithoutExt.replace(/[^a-zA-Z0-9]/g, ''); 
+    // Format: Timestamp_CleanName.ext
+    const fileName = `${Date.now()}_${cleanName}.${fileExt}`;
+    const filePath = fileName;
 
     // 2. Retry Loop
-    while (attempt < RETRY_COUNT) {
+    while (attempt < RETRY_LIMIT) {
       try {
+        attempt++;
+        
+        // Upload
         const { data, error } = await supabase.storage
           .from('product-images')
           .upload(filePath, file, {
@@ -70,29 +75,36 @@ export const firebaseService = {
             upsert: false
           });
 
-        if (error) throw error;
+        if (error) {
+          // Log FULL Supabase error object for debugging
+          console.error(`Supabase Upload Error (Attempt ${attempt}/${RETRY_LIMIT}):`, {
+            message: error.message,
+            name: error.name,
+            details: error
+          });
+          throw error; // Throw to catch block for retry logic
+        }
 
-        // 3. Get Public URL
+        // Get URL
         const { data: { publicUrl } } = supabase.storage
           .from('product-images')
           .getPublicUrl(filePath);
 
         return publicUrl;
+
       } catch (error: any) {
-        lastError = error;
-        attempt++;
-        console.warn(`Upload attempt ${attempt} failed for ${file.name}:`, error.message);
-        
-        // Wait 1 second before retrying (simple backoff)
-        if (attempt < RETRY_COUNT) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
+        // If max retries reached, throw the REAL error message
+        if (attempt >= RETRY_LIMIT) {
+          console.error("Final Upload Failure:", error);
+          throw new Error(error.message || "Unknown error from Supabase storage.");
         }
+        
+        // Wait before retry (1s, 2s, 3s...)
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
       }
     }
-
-    // 4. Final Error Handling
-    console.error('Final Supabase Upload Error:', lastError);
-    throw new Error(`Failed to upload ${file.name} after ${RETRY_COUNT} attempts. ${lastError?.message || 'Check network connection.'}`);
+    
+    throw new Error("Unexpected upload failure");
   },
 
   // --- ORDERS ---
@@ -123,7 +135,6 @@ export const firebaseService = {
       throw error;
     }
 
-    // Optional: Log when a user creates an order? Usually we track Admin actions, but let's leave it clean.
     return {
       ...orderData,
       id: data.id,

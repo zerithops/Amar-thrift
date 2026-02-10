@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Loader2, Upload, X } from 'lucide-react';
@@ -5,7 +6,7 @@ import { firebaseService } from '../services/firebase';
 import { Category } from '../types';
 
 const CATEGORIES: Category[] = ['T-Shirt', 'Hoodie', 'Jacket', 'Pants', 'Sweater', 'Accessories'];
-const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 const AddEditProduct: React.FC = () => {
   const navigate = useNavigate();
@@ -53,9 +54,9 @@ const AddEditProduct: React.FC = () => {
     const newPreviews: string[] = [];
 
     for (const file of fileArray) {
-       // Size check (50MB)
+       // Size check (5MB)
        if (file.size > MAX_FILE_SIZE) {
-         alert(`File "${file.name}" is too large (Max 50MB). Skipped.`);
+         alert(`File "${file.name}" is too large. Max allowed size is 5MB.`);
          continue;
        }
        newFiles.push(file);
@@ -87,35 +88,47 @@ const AddEditProduct: React.FC = () => {
 
     setLoading(true);
 
-    try {
-      const imageUrls: string[] = [];
+    const imageUrls: string[] = [];
+    const errors: string[] = [];
 
-      // 1. Upload Loop
-      for (const file of selectedFiles) {
-        try {
-           const url = await firebaseService.uploadFile(file);
-           imageUrls.push(url);
-        } catch (uploadError: any) {
-           console.error(uploadError);
-           alert(`Error: ${uploadError.message}. Please check your internet connection and try again.`);
-           setLoading(false);
-           return; // Stop the entire process if one image fails to ensure data integrity
-        }
+    // 1. Upload Loop
+    // We continue uploading subsequent files even if one fails
+    for (const file of selectedFiles) {
+      if (file.size > MAX_FILE_SIZE) {
+        errors.push(`"${file.name}": Exceeds 5MB limit.`);
+        continue;
       }
 
-      // 2. Database Insert
+      try {
+          const url = await firebaseService.uploadFile(file);
+          imageUrls.push(url);
+      } catch (uploadError: any) {
+          console.error(`Failed to upload ${file.name}:`, uploadError);
+          // Store specific error message
+          errors.push(`"${file.name}": ${uploadError.message || 'Unknown error'}`);
+      }
+    }
+
+    // 2. Handle Errors
+    if (errors.length > 0) {
+      setLoading(false);
+      const errorMsg = `Some images failed to upload:\n\n${errors.join('\n')}\n\nSuccessful uploads: ${imageUrls.length}. Please try again.`;
+      alert(errorMsg);
+      // We do NOT create the product if there are upload errors to ensure data integrity
+      return; 
+    }
+
+    // 3. Database Insert
+    try {
       await firebaseService.addProduct({
         ...formData,
         price: parseFloat(formData.price),
         stock: parseInt(formData.stock),
         images: imageUrls
       });
-
-      // 3. Success
       navigate('/products');
-
-    } catch (err) {
-      alert('Failed to save product information to database.');
+    } catch (err: any) {
+      alert(`Database Error: ${err.message}`);
       console.error(err);
     } finally {
       setLoading(false);
@@ -198,7 +211,7 @@ const AddEditProduct: React.FC = () => {
                   </div>
                 )}
               </div>
-              <p className="text-[10px] text-gray-400 pt-1">* Images upload when you click "List Product"</p>
+              <p className="text-[10px] text-gray-400 pt-1">* Max size 5MB per image.</p>
             </div>
 
             <div className="space-y-2">
