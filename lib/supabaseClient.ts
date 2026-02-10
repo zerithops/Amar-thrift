@@ -21,7 +21,12 @@ const getEnv = (key: string) => {
 };
 
 // Check for both Vercel/Next.js style (NEXT_PUBLIC_) and Vite style (VITE_)
+// We ensure we always have a string to prevent build-time crashes of createClient
 const supabaseUrl = getEnv('NEXT_PUBLIC_SUPABASE_URL') || getEnv('VITE_SUPABASE_URL') || FALLBACK_URL;
 const supabaseKey = getEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY') || getEnv('VITE_SUPABASE_ANON_KEY') || FALLBACK_KEY;
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+// Create client with fallbacks to avoid throwing if env vars are missing during build
+export const supabase = createClient(
+  supabaseUrl || 'https://placeholder.supabase.co', 
+  supabaseKey || 'placeholder'
+);

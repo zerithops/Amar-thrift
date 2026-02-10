@@ -1,8 +1,8 @@
 
 import React from 'react';
 import { Plus, Trash2, Edit2, Upload, X, Save, Loader2 } from 'lucide-react';
-import { firebaseService } from '../../services/firebase';
-import { Product, Category } from '../../types';
+import { firebaseService } from '../services/firebase';
+import { Product, Category } from '../types';
 
 const CATEGORIES: Category[] = ['T-Shirt', 'Hoodie', 'Jacket', 'Pants', 'Sweater', 'Accessories'];
 
