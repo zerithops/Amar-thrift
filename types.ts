@@ -42,3 +42,11 @@ export interface Product {
   stock: number;
   createdAt: number;
 }
+
+export interface Review {
+  id?: string;
+  name: string;
+  rating: number; // 1-5
+  message: string;
+  createdAt: number;
+}

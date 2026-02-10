@@ -50,8 +50,8 @@ const AddEditProduct: React.FC = () => {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (formData.images.length >= 4) {
-        alert('Maximum 4 images allowed.');
+      if (formData.images.length >= 6) {
+        alert('Maximum 6 images allowed.');
         return;
       }
       if (file.size > 5 * 1024 * 1024) { // 5MB limit check
@@ -119,9 +119,9 @@ const AddEditProduct: React.FC = () => {
 
           <div className="space-y-6">
             <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-widest text-gray-400 px-1">Product Images ({formData.images.length}/4)</label>
+              <label className="text-xs font-bold uppercase tracking-widest text-gray-400 px-1">Product Images ({formData.images.length}/6)</label>
               
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                 {formData.images.map((img, idx) => (
                   <div key={idx} className="relative aspect-square rounded-xl overflow-hidden group border border-gray-100">
                     <img src={img} alt={`Upload ${idx}`} className="w-full h-full object-cover" />
@@ -135,7 +135,7 @@ const AddEditProduct: React.FC = () => {
                   </div>
                 ))}
 
-                {formData.images.length < 4 && (
+                {formData.images.length < 6 && (
                   <div className="relative aspect-square bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl hover:border-brand-blue/50 transition-colors flex flex-col items-center justify-center cursor-pointer group">
                     <input 
                       type="file" 

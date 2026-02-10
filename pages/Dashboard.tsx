@@ -2,14 +2,14 @@
 import React from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { LogOut, RefreshCcw, Package, Clock, User, Phone, MapPin, Mail, ShoppingCart, Plus, List, CreditCard, DollarSign, Truck, Edit2, Save, X } from 'lucide-react';
+import { LogOut, RefreshCcw, Package, Clock, User, Phone, MapPin, Mail, ShoppingCart, Plus, List, CreditCard, DollarSign, Truck, Edit2, Save, X, Star } from 'lucide-react';
 import { firebaseService } from '../services/firebase';
 import { Order, OrderStatus, PaymentStatus } from '../types';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [orders, setOrders] = React.useState<Order[]>([]);
-  const [stats, setStats] = React.useState({ totalOrders: 0, totalProducts: 0, pendingOrders: 0, deliveredOrders: 0 });
+  const [stats, setStats] = React.useState({ totalOrders: 0, totalProducts: 0, totalReviews: 0, pendingOrders: 0, deliveredOrders: 0 });
   const [loading, setLoading] = React.useState(true);
   const [editingId, setEditingId] = React.useState<string | null>(null);
   
@@ -108,6 +108,10 @@ const Dashboard: React.FC = () => {
             <List size={18} />
             <span>Products</span>
           </Link>
+          <Link to="/admin-reviews" className="flex items-center space-x-2 px-6 py-3 bg-white hover:bg-gray-50 text-brand-black rounded-xl font-bold transition-all border border-gray-200 shadow-sm">
+            <Star size={18} />
+            <span>Reviews</span>
+          </Link>
           <Link to="/add-product" className="flex items-center space-x-2 px-6 py-3 bg-brand-black text-white hover:bg-brand-blue rounded-xl font-bold transition-all shadow-md">
             <Plus size={18} />
             <span>New Item</span>
@@ -122,7 +126,7 @@ const Dashboard: React.FC = () => {
         <StatCard title="Total Orders" value={stats.totalOrders} icon={ShoppingCart} color="bg-blue-50 text-brand-blue" />
         <StatCard title="Total Items" value={stats.totalProducts} icon={Package} color="bg-purple-50 text-purple-600" />
         <StatCard title="Pending" value={stats.pendingOrders} icon={Clock} color="bg-yellow-50 text-yellow-600" />
-        <StatCard title="Delivered" value={stats.deliveredOrders} icon={Package} color="bg-green-50 text-green-600" />
+        <StatCard title="Reviews" value={stats.totalReviews} icon={Star} color="bg-pink-50 text-pink-500" />
       </div>
 
       <div className="space-y-6">

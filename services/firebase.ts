@@ -1,9 +1,10 @@
 
-import { Order, OrderStatus, PaymentStatus, Product } from '../types';
+import { Order, OrderStatus, PaymentStatus, Product, Review } from '../types';
 import { PRODUCTS } from '../constants';
 
 const ORDERS_KEY = 'amar_thrift_orders';
 const PRODUCTS_KEY = 'amar_thrift_products';
+const REVIEWS_KEY = 'amar_thrift_reviews';
 
 // Helper to initialize products if empty or migrate old data
 const initProducts = () => {
@@ -97,13 +98,38 @@ export const firebaseService = {
     localStorage.setItem(PRODUCTS_KEY, JSON.stringify(filtered));
   },
 
+  // --- REVIEWS ---
+  async getReviews(): Promise<Review[]> {
+    const data = localStorage.getItem(REVIEWS_KEY);
+    return data ? JSON.parse(data).sort((a: any, b: any) => b.createdAt - a.createdAt) : [];
+  },
+
+  async addReview(review: Omit<Review, 'id' | 'createdAt'>): Promise<void> {
+    const newReview: Review = {
+      ...review,
+      id: Math.random().toString(36).substr(2, 9),
+      createdAt: Date.now()
+    };
+    const reviews = await this.getReviews();
+    reviews.push(newReview);
+    localStorage.setItem(REVIEWS_KEY, JSON.stringify(reviews));
+  },
+
+  async deleteReview(id: string): Promise<void> {
+    const reviews = await this.getReviews();
+    const filtered = reviews.filter(r => r.id !== id);
+    localStorage.setItem(REVIEWS_KEY, JSON.stringify(filtered));
+  },
+
   // --- STATS ---
   async getStats() {
     const orders = await this.getOrders();
     const products = await this.getProducts();
+    const reviews = await this.getReviews();
     return {
       totalOrders: orders.length,
       totalProducts: products.length,
+      totalReviews: reviews.length,
       pendingOrders: orders.filter(o => o.status === OrderStatus.PENDING).length,
       deliveredOrders: orders.filter(o => o.status === OrderStatus.DELIVERED).length
     };

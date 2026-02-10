@@ -17,6 +17,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const navLinks = [
     { name: 'Home', path: '/' },
     { name: 'Shop', path: '/shop' },
+    { name: 'Reviews', path: '/reviews' },
     { name: 'Track Order', path: '/track-order' },
   ];
 
@@ -162,8 +163,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               <ul className="space-y-2 text-sm text-white/80">
                 <li><Link to="/" className="hover:text-white hover:underline transition-all">Home</Link></li>
                 <li><Link to="/shop" className="hover:text-white hover:underline transition-all">New Arrivals</Link></li>
+                <li><Link to="/reviews" className="hover:text-white hover:underline transition-all">Client Reviews</Link></li>
                 <li><Link to="/track-order" className="hover:text-white hover:underline transition-all">Track Order</Link></li>
-                <li><Link to="/admin" className="hover:text-white hover:underline transition-all">Admin Access</Link></li>
               </ul>
             </div>
 

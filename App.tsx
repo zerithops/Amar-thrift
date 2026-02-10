@@ -10,9 +10,11 @@ import AdminGuard from './components/AdminGuard';
 
 // Lazy load pages
 const Shop = React.lazy(() => import('./pages/Shop'));
+const Reviews = React.lazy(() => import('./pages/Reviews'));
 const AdminLogin = React.lazy(() => import('./pages/AdminLogin'));
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
 const AdminProducts = React.lazy(() => import('./pages/AdminProducts'));
+const AdminReviews = React.lazy(() => import('./pages/AdminReviews'));
 const AddEditProduct = React.lazy(() => import('./pages/AddEditProduct'));
 
 const ScrollToTop: React.FC = () => {
@@ -48,6 +50,7 @@ const App: React.FC = () => {
             {/* Public Routes */}
             <Route path="/" element={<Home />} />
             <Route path="/shop" element={<Shop />} />
+            <Route path="/reviews" element={<Reviews />} />
             <Route path="/order" element={<Order />} />
             <Route path="/track-order" element={<TrackOrder />} />
             
@@ -57,6 +60,7 @@ const App: React.FC = () => {
             {/* Protected Routes */}
             <Route path="/dashboard" element={<AdminGuard><Dashboard /></AdminGuard>} />
             <Route path="/products" element={<AdminGuard><AdminProducts /></AdminGuard>} />
+            <Route path="/admin-reviews" element={<AdminGuard><AdminReviews /></AdminGuard>} />
             <Route path="/add-product" element={<AdminGuard><AddEditProduct /></AdminGuard>} />
             
             {/* Fallback */}
