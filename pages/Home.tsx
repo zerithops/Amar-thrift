@@ -116,11 +116,15 @@ const Home: React.FC = () => {
               >
                 {/* Image Container */}
                 <div className="relative aspect-[3/4] overflow-hidden bg-gray-100">
-                  <img 
-                    src={product.images[0]} 
-                    alt={product.name} 
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
-                  />
+                  {product.images && product.images.length > 0 ? (
+                    <img 
+                      src={product.images[0]} 
+                      alt={product.name} 
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>
+                  )}
                   {/* Overlay on Hover */}
                   <div className="absolute inset-0 bg-brand-blue/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   

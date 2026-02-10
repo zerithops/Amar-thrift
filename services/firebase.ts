@@ -5,20 +5,21 @@ import { Order, OrderStatus, PaymentStatus, Product, Review } from '../types';
 export const firebaseService = {
   // --- HELPERS ---
   
-  // Convert Supabase timestamp to number (for app compatibility)
   toTimestamp(isoString: string): number {
     return new Date(isoString).getTime();
   },
 
   // --- STORAGE (Product Images) ---
   async uploadFile(file: File): Promise<string> {
-    // Generate a unique file name
-    const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9]/g, '')}`;
-    
+    // Preserve extension (e.g., .png, .jpg)
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+    const filePath = `${fileName}`;
+
     // Upload to 'product-images' bucket
     const { data, error } = await supabase.storage
       .from('product-images')
-      .upload(fileName, file);
+      .upload(filePath, file);
 
     if (error) {
       console.error('Upload error:', error);
@@ -28,7 +29,7 @@ export const firebaseService = {
     // Get public URL
     const { data: { publicUrl } } = supabase.storage
       .from('product-images')
-      .getPublicUrl(fileName);
+      .getPublicUrl(filePath);
 
     return publicUrl;
   },
@@ -145,7 +146,7 @@ export const firebaseService = {
       id: p.id,
       name: p.name,
       price: p.price,
-      images: p.images || [], // Handles array of image URLs
+      images: p.images || [], 
       description: p.description,
       category: p.category,
       stock: p.stock,
@@ -162,7 +163,7 @@ export const firebaseService = {
         description: product.description,
         category: product.category,
         stock: product.stock,
-        images: product.images // Saves array of URLs
+        images: product.images 
       }])
       .select()
       .single();

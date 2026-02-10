@@ -1,4 +1,15 @@
-/// <reference types="vite/client" />
+// Removed reference to vite/client to fix types not found error
+// /// <reference types="vite/client" />
+
+interface ImportMetaEnv {
+  readonly VITE_SUPABASE_URL: string;
+  readonly VITE_SUPABASE_ANON_KEY: string;
+  [key: string]: any;
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}
 
 declare module '*.svg' {
   import * as React from 'react';

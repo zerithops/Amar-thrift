@@ -70,8 +70,14 @@ const AdminProducts: React.FC = () => {
           {filteredProducts.map((p, idx) => (
             <motion.div key={p.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }} className="bg-white border border-gray-100 rounded-2xl p-4 flex items-center space-x-6 shadow-soft hover:shadow-hover transition-all group">
               <div className="w-24 h-24 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100 relative">
-                <img src={p.images[0]} alt={p.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                {p.images.length > 1 && (
+                {p.images && p.images.length > 0 ? (
+                  <img src={p.images[0]} alt={p.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-400">
+                    <Package size={24} />
+                  </div>
+                )}
+                {p.images && p.images.length > 1 && (
                     <div className="absolute bottom-1 right-1 bg-black/50 text-white text-[10px] px-1.5 rounded-full font-bold">+{p.images.length - 1}</div>
                 )}
               </div>

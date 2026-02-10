@@ -23,7 +23,6 @@ const Shop: React.FC = () => {
   const openModal = (product: Product) => {
     setSelectedProduct(product);
     setCurrentImageIndex(0);
-    // Prevent background scroll
     document.body.style.overflow = 'hidden';
   };
 
@@ -34,14 +33,14 @@ const Shop: React.FC = () => {
 
   const nextImage = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (selectedProduct) {
+    if (selectedProduct && selectedProduct.images) {
       setCurrentImageIndex((prev) => (prev + 1) % selectedProduct.images.length);
     }
   };
 
   const prevImage = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (selectedProduct) {
+    if (selectedProduct && selectedProduct.images) {
       setCurrentImageIndex((prev) => (prev - 1 + selectedProduct.images.length) % selectedProduct.images.length);
     }
   };
@@ -50,7 +49,6 @@ const Shop: React.FC = () => {
 
   return (
     <div className="bg-brand-gray min-h-screen pb-20">
-      {/* Header Section */}
       <div className="bg-white border-b border-gray-100 py-16 mb-12 shadow-soft">
         <div className="max-w-7xl mx-auto px-6 lg:px-8 text-center">
           <motion.h1 
@@ -71,7 +69,6 @@ const Shop: React.FC = () => {
         </div>
       </div>
 
-      {/* Product Grid */}
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         {loading ? (
           <div className="flex justify-center py-32">
@@ -94,14 +91,16 @@ const Shop: React.FC = () => {
                 onClick={() => openModal(product)}
                 className="group bg-white rounded-2xl overflow-hidden shadow-soft hover:shadow-hover transition-all duration-300 transform hover:-translate-y-2 flex flex-col cursor-pointer"
               >
-                {/* Image Container */}
                 <div className="relative aspect-[3/4] overflow-hidden bg-gray-100">
-                  <img 
-                    src={product.images[0]} 
-                    alt={product.name} 
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
-                  />
-                  {/* Overlay on Hover */}
+                  {product.images && product.images.length > 0 ? (
+                    <img 
+                      src={product.images[0]} 
+                      alt={product.name} 
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>
+                  )}
                   <div className="absolute inset-0 bg-brand-blue/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                     <div className="bg-white/20 backdrop-blur-md p-3 rounded-full text-white">
                       <ZoomIn size={24} />
@@ -109,7 +108,6 @@ const Shop: React.FC = () => {
                   </div>
                 </div>
                 
-                {/* Product Info */}
                 <div className="p-6 flex flex-col flex-grow">
                   <div className="flex-grow">
                     <p className="text-xs font-bold text-brand-blue uppercase tracking-wider mb-1">{product.category}</p>
@@ -128,7 +126,6 @@ const Shop: React.FC = () => {
         )}
       </div>
 
-      {/* Product Details Modal */}
       <AnimatePresence>
         {selectedProduct && (
           <motion.div 
@@ -152,15 +149,18 @@ const Shop: React.FC = () => {
                 <X size={24} />
               </button>
 
-              {/* Image Gallery */}
               <div className="relative bg-gray-100 aspect-[4/5] md:aspect-auto md:h-full group">
-                <img 
-                  src={selectedProduct.images[currentImageIndex]} 
-                  alt={selectedProduct.name} 
-                  className="w-full h-full object-cover"
-                />
+                {selectedProduct.images && selectedProduct.images.length > 0 ? (
+                  <img 
+                    src={selectedProduct.images[currentImageIndex]} 
+                    alt={selectedProduct.name} 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                   <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>
+                )}
                 
-                {selectedProduct.images.length > 1 && (
+                {selectedProduct.images && selectedProduct.images.length > 1 && (
                   <>
                     <button 
                       onClick={prevImage}
@@ -175,7 +175,6 @@ const Shop: React.FC = () => {
                       <ChevronRight size={20} />
                     </button>
                     
-                    {/* Dots Indicator */}
                     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2">
                       {selectedProduct.images.map((_, idx) => (
                         <div 
@@ -188,7 +187,6 @@ const Shop: React.FC = () => {
                 )}
               </div>
 
-              {/* Details */}
               <div className="p-8 md:p-12 flex flex-col h-full overflow-y-auto">
                 <div className="flex-grow">
                    <p className="text-brand-blue font-bold uppercase tracking-widest text-xs mb-2">{selectedProduct.category}</p>
