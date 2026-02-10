@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Loader2, Upload, X } from 'lucide-react';
@@ -62,6 +63,7 @@ const AddEditProduct: React.FC = () => {
 
       setUploading(true);
       try {
+        // Uploads to Supabase storage and gets public URL
         const publicUrl = await firebaseService.uploadFile(file);
         setFormData(prev => ({ ...prev, images: [...prev.images, publicUrl] }));
       } catch (error) {

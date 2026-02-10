@@ -1,3 +1,4 @@
+
 import { supabase } from '../lib/supabaseClient';
 import { Order, OrderStatus, PaymentStatus, Product, Review } from '../types';
 
@@ -9,10 +10,12 @@ export const firebaseService = {
     return new Date(isoString).getTime();
   },
 
-  // --- STORAGE ---
+  // --- STORAGE (Product Images) ---
   async uploadFile(file: File): Promise<string> {
+    // Generate a unique file name
     const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9]/g, '')}`;
     
+    // Upload to 'product-images' bucket
     const { data, error } = await supabase.storage
       .from('product-images')
       .upload(fileName, file);
@@ -22,6 +25,7 @@ export const firebaseService = {
       throw error;
     }
 
+    // Get public URL
     const { data: { publicUrl } } = supabase.storage
       .from('product-images')
       .getPublicUrl(fileName);
@@ -119,7 +123,6 @@ export const firebaseService = {
   },
 
   async updateOrder(id: string, updates: Partial<Order>): Promise<void> {
-    // Map camelCase updates to snake_case db columns
     const dbUpdates: any = {};
     if (updates.status) dbUpdates.status = updates.status;
     if (updates.paymentStatus) dbUpdates.payment_status = updates.paymentStatus;
@@ -142,7 +145,7 @@ export const firebaseService = {
       id: p.id,
       name: p.name,
       price: p.price,
-      images: p.images || [],
+      images: p.images || [], // Handles array of image URLs
       description: p.description,
       category: p.category,
       stock: p.stock,
@@ -159,7 +162,7 @@ export const firebaseService = {
         description: product.description,
         category: product.category,
         stock: product.stock,
-        images: product.images
+        images: product.images // Saves array of URLs
       }])
       .select()
       .single();
