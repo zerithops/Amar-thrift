@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Loader2, Upload, X } from 'lucide-react';
@@ -10,6 +9,7 @@ const CATEGORIES: Category[] = ['T-Shirt', 'Hoodie', 'Jacket', 'Pants', 'Sweater
 const AddEditProduct: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = React.useState(false);
+  const [uploading, setUploading] = React.useState(false);
   const [formData, setFormData] = React.useState({
     name: '',
     images: [] as string[],
@@ -38,6 +38,7 @@ const AddEditProduct: React.FC = () => {
       navigate('/products');
     } catch (err) {
       alert('Failed to save product');
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -47,7 +48,7 @@ const AddEditProduct: React.FC = () => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (formData.images.length >= 6) {
@@ -59,14 +60,19 @@ const AddEditProduct: React.FC = () => {
         return;
       }
 
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData(prev => ({ ...prev, images: [...prev.images, reader.result as string] }));
-      };
-      reader.readAsDataURL(file);
+      setUploading(true);
+      try {
+        const publicUrl = await firebaseService.uploadFile(file);
+        setFormData(prev => ({ ...prev, images: [...prev.images, publicUrl] }));
+      } catch (error) {
+        alert('Failed to upload image. Please try again.');
+        console.error(error);
+      } finally {
+        setUploading(false);
+        // Reset input
+        e.target.value = '';
+      }
     }
-    // Reset input
-    e.target.value = '';
   };
 
   const removeImage = (index: number) => {
@@ -136,17 +142,18 @@ const AddEditProduct: React.FC = () => {
                 ))}
 
                 {formData.images.length < 6 && (
-                  <div className="relative aspect-square bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl hover:border-brand-blue/50 transition-colors flex flex-col items-center justify-center cursor-pointer group">
+                  <div className={`relative aspect-square bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl transition-colors flex flex-col items-center justify-center cursor-pointer group ${uploading ? 'opacity-50 pointer-events-none' : 'hover:border-brand-blue/50'}`}>
                     <input 
                       type="file" 
                       accept="image/*"
                       onChange={handleImageUpload}
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                      disabled={uploading}
                     />
                     <div className="p-3 bg-white rounded-full mb-2 group-hover:scale-110 transition-transform shadow-sm">
-                      <Upload size={20} className="text-gray-400 group-hover:text-brand-blue" />
+                      {uploading ? <Loader2 size={20} className="animate-spin text-brand-blue" /> : <Upload size={20} className="text-gray-400 group-hover:text-brand-blue" />}
                     </div>
-                    <p className="text-xs text-gray-500 font-medium">Add Image</p>
+                    <p className="text-xs text-gray-500 font-medium">{uploading ? 'Uploading...' : 'Add Image'}</p>
                   </div>
                 )}
               </div>
@@ -158,7 +165,7 @@ const AddEditProduct: React.FC = () => {
             </div>
 
             <div className="pt-4">
-              <button disabled={loading} type="submit" className="w-full bg-brand-black hover:bg-brand-blue text-white font-bold py-5 rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center space-x-2">
+              <button disabled={loading || uploading} type="submit" className="w-full bg-brand-black hover:bg-brand-blue text-white font-bold py-5 rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center space-x-2">
                 {loading ? <Loader2 className="animate-spin"/> : <><Save size={20}/> <span>LIST PRODUCT</span></>}
               </button>
             </div>
