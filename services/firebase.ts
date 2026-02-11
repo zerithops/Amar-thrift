@@ -9,6 +9,19 @@ export const firebaseService = {
     return new Date(isoString).getTime();
   },
 
+  async checkAdmin(): Promise<boolean> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return false;
+    
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+      
+    return profile?.role === 'admin';
+  },
+
   // --- LOGGING ---
   async logActivity(action: string, details: string): Promise<void> {
     try {
@@ -69,12 +82,66 @@ export const firebaseService = {
     throw new Error("Unexpected upload failure");
   },
 
+  // Extract file path from public URL
+  getFilePathFromUrl(url: string): string | null {
+    try {
+      // Splits at the bucket name to get the path relative to bucket root
+      const parts = url.split('/product-images/');
+      if (parts.length < 2) return null;
+      return parts[1];
+    } catch (e) {
+      return null;
+    }
+  },
+
+  async deleteProductImage(productId: string, imageUrl: string): Promise<void> {
+    // 1. Verify Admin Role
+    const isAdmin = await this.checkAdmin();
+    if (!isAdmin) {
+      throw new Error("Unauthorized: Only admins can delete images.");
+    }
+
+    // 2. Delete file from Storage
+    const filePath = this.getFilePathFromUrl(imageUrl);
+    if (filePath) {
+      const { error: storageError } = await supabase.storage
+        .from('product-images')
+        .remove([filePath]);
+      
+      if (storageError) {
+        console.error("Storage delete error:", storageError);
+        throw new Error("Failed to delete image file from storage.");
+      }
+    } else {
+        console.warn("Could not extract file path, skipping storage delete", imageUrl);
+    }
+
+    // 3. Update Database (Remove URL from array)
+    // First fetch current product to ensure we have latest array
+    const { data: product, error: fetchError } = await supabase
+        .from('products')
+        .select('images')
+        .eq('id', productId)
+        .single();
+    
+    if (fetchError || !product) throw new Error("Product not found");
+
+    const updatedImages = product.images.filter((img: string) => img !== imageUrl);
+
+    const { error: dbError } = await supabase
+      .from('products')
+      .update({ images: updatedImages })
+      .eq('id', productId);
+
+    if (dbError) throw new Error("Failed to update product record.");
+
+    await this.logActivity('DELETE_IMAGE', `Deleted image from product ${productId}`);
+  },
+
   // --- ORDERS ---
   async addOrder(orderData: Omit<Order, 'id' | 'status' | 'paymentStatus' | 'createdAt' | 'orderId'>): Promise<Order> {
     const orderId = Math.random().toString(36).substr(2, 6).toUpperCase();
     
-    // We store items as JSONB in Supabase.
-    // Ensure you have run: alter table orders add column items jsonb;
     const { data, error } = await supabase
       .from('orders')
       .insert([{
@@ -84,7 +151,7 @@ export const firebaseService = {
         phone: orderData.phone,
         city: orderData.city,
         address: orderData.address,
-        items: orderData.items, // Now storing array
+        items: orderData.items, 
         delivery_charge: orderData.deliveryCharge,
         total: orderData.total,
         status: OrderStatus.PENDING,
@@ -124,9 +191,9 @@ export const firebaseService = {
       phone: o.phone,
       city: o.city,
       address: o.address,
-      items: o.items || [], // Handle migration safely
-      productName: o.product_name, // Legacy support
-      price: o.price, // Legacy support
+      items: o.items || [], 
+      productName: o.product_name, 
+      price: o.price, 
       deliveryCharge: o.delivery_charge,
       total: o.total,
       status: o.status as OrderStatus,
@@ -154,7 +221,6 @@ export const firebaseService = {
       city: data.city,
       address: data.address,
       items: data.items || [],
-      // Legacy fields for backward compatibility
       productName: data.product_name || (data.items ? `${data.items.length} items` : 'Unknown'),
       price: data.price, 
       deliveryCharge: data.delivery_charge,
@@ -241,7 +307,41 @@ export const firebaseService = {
     return data.id;
   },
 
+  async updateProduct(id: string, product: Partial<Product>): Promise<void> {
+    const { error } = await supabase
+      .from('products')
+      .update({
+        name: product.name,
+        price: product.price,
+        description: product.description,
+        category: product.category,
+        stock: product.stock,
+        images: product.images
+      })
+      .eq('id', id);
+
+    if (error) throw error;
+    await this.logActivity('UPDATE_PRODUCT', `Updated product: ${product.name}`);
+  },
+
   async deleteProduct(id: string): Promise<void> {
+    // 1. Fetch images to delete them from storage first
+    const product = await this.getProduct(id);
+    if (product && product.images) {
+        for (const url of product.images) {
+            try {
+                // Determine file path
+                const path = this.getFilePathFromUrl(url);
+                if (path) {
+                    await supabase.storage.from('product-images').remove([path]);
+                }
+            } catch (e) {
+                console.warn(`Failed to delete image ${url} during product deletion`);
+            }
+        }
+    }
+
+    // 2. Delete row
     const { error } = await supabase.from('products').delete().eq('id', id);
     if (!error) await this.logActivity('DELETE_PRODUCT', `Deleted product ID: ${id}`);
   },

@@ -72,6 +72,7 @@ const App: React.FC = () => {
                 <Route path="/products" element={<AdminGuard><AdminProducts /></AdminGuard>} />
                 <Route path="/admin-reviews" element={<AdminGuard><AdminReviews /></AdminGuard>} />
                 <Route path="/add-product" element={<AdminGuard><AddEditProduct /></AdminGuard>} />
+                <Route path="/edit-product/:id" element={<AdminGuard><AddEditProduct /></AdminGuard>} />
                 
                 {/* Fallback */}
                 <Route path="*" element={<Navigate to="/" replace />} />
