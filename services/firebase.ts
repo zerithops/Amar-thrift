@@ -201,6 +201,27 @@ export const firebaseService = {
     }));
   },
 
+  async getProduct(id: string): Promise<Product | null> {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error || !data) return null;
+
+    return {
+      id: data.id,
+      name: data.name,
+      price: data.price,
+      images: Array.isArray(data.images) ? data.images : (data.images ? [data.images] : []),
+      description: data.description,
+      category: data.category,
+      stock: data.stock,
+      createdAt: this.toTimestamp(data.created_at)
+    };
+  },
+
   async addProduct(product: Omit<Product, 'id' | 'createdAt'>): Promise<string> {
     const { data, error } = await supabase
       .from('products')

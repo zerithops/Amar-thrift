@@ -11,6 +11,7 @@ import { CartProvider } from './context/CartContext';
 
 // Lazy load pages
 const Shop = React.lazy(() => import('./pages/Shop'));
+const ProductDetail = React.lazy(() => import('./pages/ProductDetail'));
 const Cart = React.lazy(() => import('./pages/Cart'));
 const Reviews = React.lazy(() => import('./pages/Reviews'));
 const AdminLogin = React.lazy(() => import('./pages/AdminLogin'));
@@ -53,6 +54,7 @@ const App: React.FC = () => {
               {/* Public Routes */}
               <Route path="/" element={<Home />} />
               <Route path="/shop" element={<Shop />} />
+              <Route path="/product/:id" element={<ProductDetail />} />
               <Route path="/cart" element={<Cart />} />
               <Route path="/reviews" element={<Reviews />} />
               <Route path="/order" element={<Order />} />

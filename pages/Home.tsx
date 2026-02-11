@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Loader2, ShoppingBag } from 'lucide-react';
 import { firebaseService } from '../services/firebase';
 import { Product } from '../types';
@@ -9,6 +9,7 @@ import { Product } from '../types';
 const Home: React.FC = () => {
   const [products, setProducts] = React.useState<Product[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const navigate = useNavigate();
 
   React.useEffect(() => {
     // Only fetch first 3 products for featured section
@@ -114,6 +115,7 @@ const Home: React.FC = () => {
                 whileInView={{ opacity: 1, y: 0 }} 
                 viewport={{ once: true }} 
                 transition={{ duration: 0.6, delay: index * 0.1, ease: "easeOut" }} 
+                onClick={() => navigate(`/product/${product.id}`)}
                 className="group bg-brand-card rounded-2xl overflow-hidden shadow-soft hover:shadow-hover border border-brand-border/50 transition-all duration-500 cursor-pointer"
               >
                 {/* Image Container */}
@@ -128,13 +130,10 @@ const Home: React.FC = () => {
                     <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>
                   )}
                   
-                  {/* Quick Add Button */}
-                  <Link 
-                    to={`/order?product=${encodeURIComponent(product.name)}`}
-                    className="absolute bottom-6 right-6 bg-white/90 backdrop-blur text-brand-primary p-4 rounded-full shadow-lg opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 hover:bg-brand-primary hover:text-white"
-                  >
+                  {/* Quick View / Action */}
+                  <div className="absolute bottom-6 right-6 bg-[#006747] backdrop-blur text-white p-4 rounded-full shadow-lg opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 hover:opacity-90">
                     <ArrowRight size={20} />
-                  </Link>
+                  </div>
                 </div>
                 
                 {/* Product Info */}
