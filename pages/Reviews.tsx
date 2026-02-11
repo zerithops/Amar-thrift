@@ -42,16 +42,16 @@ const Reviews: React.FC = () => {
   };
 
   return (
-    <div className="bg-brand-gray min-h-screen pb-20">
+    <div className="bg-brand-bg min-h-screen pb-20 pt-10">
       {/* Header */}
-      <div className="bg-white border-b border-gray-100 py-16 mb-12 shadow-soft">
+      <div className="mb-16">
         <div className="max-w-7xl mx-auto px-6 lg:px-8 text-center">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="flex justify-center mb-6"
           >
-             <div className="p-4 bg-brand-blue/10 rounded-full text-brand-blue">
+             <div className="p-4 bg-brand-card rounded-full text-brand-gold shadow-sm border border-brand-border">
                 <Star size={32} fill="currentColor" />
              </div>
           </motion.div>
@@ -59,7 +59,7 @@ const Reviews: React.FC = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-4xl md:text-5xl font-heading font-bold text-brand-black mb-4"
+            className="text-4xl md:text-5xl font-heading font-bold text-brand-primary mb-4"
           >
             Client Love
           </motion.h1>
@@ -67,7 +67,7 @@ const Reviews: React.FC = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="text-gray-500 max-w-xl mx-auto mb-8"
+            className="text-brand-secondary max-w-xl mx-auto mb-8 text-lg font-light"
           >
             See what our community is saying about their premium thrift finds.
           </motion.p>
@@ -77,7 +77,7 @@ const Reviews: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
             onClick={() => setFormVisible(!formVisible)}
-            className="inline-flex items-center space-x-2 bg-brand-black text-white px-8 py-3 rounded-full font-bold uppercase tracking-widest hover:bg-brand-blue transition-all shadow-lg"
+            className="inline-flex items-center space-x-2 bg-brand-primary text-white px-8 py-3 rounded-full font-bold uppercase tracking-widest hover:bg-brand-accent transition-all shadow-lg"
           >
             <MessageCircle size={18} />
             <span>{formVisible ? 'Close Form' : 'Write a Review'}</span>
@@ -92,18 +92,18 @@ const Reviews: React.FC = () => {
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className="bg-white p-8 rounded-2xl shadow-soft border border-gray-100 overflow-hidden"
+                className="bg-brand-card p-10 rounded-3xl shadow-soft border border-brand-border overflow-hidden"
             >
-                <h3 className="text-xl font-heading font-bold text-brand-black mb-6">Share your experience</h3>
+                <h3 className="text-xl font-heading font-bold text-brand-primary mb-6">Share your experience</h3>
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Name</label>
-                            <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-brand-black focus:outline-none focus:border-brand-blue" placeholder="Your name" />
+                            <label className="text-xs font-bold text-brand-muted uppercase tracking-widest">Name</label>
+                            <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-brand-bg border border-brand-border rounded-xl px-5 py-4 text-brand-primary focus:outline-none focus:border-brand-accent" placeholder="Your name" />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Rating</label>
-                            <select value={formData.rating} onChange={e => setFormData({...formData, rating: Number(e.target.value)})} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-brand-black focus:outline-none focus:border-brand-blue">
+                            <label className="text-xs font-bold text-brand-muted uppercase tracking-widest">Rating</label>
+                            <select value={formData.rating} onChange={e => setFormData({...formData, rating: Number(e.target.value)})} className="w-full bg-brand-bg border border-brand-border rounded-xl px-5 py-4 text-brand-primary focus:outline-none focus:border-brand-accent">
                                 <option value="5">★★★★★ (5 Stars)</option>
                                 <option value="4">★★★★☆ (4 Stars)</option>
                                 <option value="3">★★★☆☆ (3 Stars)</option>
@@ -113,10 +113,10 @@ const Reviews: React.FC = () => {
                         </div>
                     </div>
                     <div className="space-y-2">
-                        <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Message</label>
-                        <textarea required rows={3} value={formData.message} onChange={e => setFormData({...formData, message: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-brand-black focus:outline-none focus:border-brand-blue resize-none" placeholder="How was the product?" />
+                        <label className="text-xs font-bold text-brand-muted uppercase tracking-widest">Message</label>
+                        <textarea required rows={3} value={formData.message} onChange={e => setFormData({...formData, message: e.target.value})} className="w-full bg-brand-bg border border-brand-border rounded-xl px-5 py-4 text-brand-primary focus:outline-none focus:border-brand-accent resize-none" placeholder="How was the product?" />
                     </div>
-                    <button disabled={submitLoading} type="submit" className="w-full bg-brand-blue text-white font-bold py-3 rounded-xl hover:bg-brand-black transition-colors flex items-center justify-center space-x-2">
+                    <button disabled={submitLoading} type="submit" className="w-full bg-brand-primary text-white font-bold py-4 rounded-xl hover:bg-brand-accent transition-colors flex items-center justify-center space-x-2">
                         {submitLoading ? <Loader2 className="animate-spin" /> : <><Send size={18} /><span>Submit Review</span></>}
                     </button>
                 </form>
@@ -125,9 +125,9 @@ const Reviews: React.FC = () => {
 
         {/* Reviews List */}
         {loading ? (
-             <div className="flex justify-center py-12"><Loader2 className="animate-spin text-brand-blue" size={32} /></div>
+             <div className="flex justify-center py-12"><Loader2 className="animate-spin text-brand-accent" size={32} /></div>
         ) : reviews.length === 0 ? (
-            <div className="text-center py-12 text-gray-400">No reviews yet. Be the first to review!</div>
+            <div className="text-center py-12 text-brand-muted">No reviews yet. Be the first to review!</div>
         ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {reviews.map((review, idx) => (
@@ -137,25 +137,25 @@ const Reviews: React.FC = () => {
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ delay: idx * 0.05 }}
-                        className="bg-white p-6 rounded-2xl shadow-soft border border-gray-100 hover:shadow-hover transition-all"
+                        className="bg-brand-card p-8 rounded-3xl shadow-soft border border-brand-border hover:shadow-hover transition-all"
                     >
-                        <div className="flex justify-between items-start mb-4">
-                            <div className="flex items-center space-x-3">
-                                <div className="w-10 h-10 rounded-full bg-brand-blue/10 flex items-center justify-center text-brand-blue">
-                                    <User size={20} />
+                        <div className="flex justify-between items-start mb-6">
+                            <div className="flex items-center space-x-4">
+                                <div className="w-12 h-12 rounded-full bg-brand-bg flex items-center justify-center text-brand-primary">
+                                    <User size={24} />
                                 </div>
                                 <div>
-                                    <p className="font-bold text-brand-black">{review.name}</p>
-                                    <p className="text-xs text-gray-400">{new Date(review.createdAt).toLocaleDateString()}</p>
+                                    <p className="font-bold text-brand-primary text-lg">{review.name}</p>
+                                    <p className="text-xs text-brand-muted">{new Date(review.createdAt).toLocaleDateString()}</p>
                                 </div>
                             </div>
-                            <div className="flex text-yellow-400">
+                            <div className="flex text-brand-gold">
                                 {[...Array(5)].map((_, i) => (
-                                    <Star key={i} size={14} fill={i < review.rating ? "currentColor" : "none"} stroke="currentColor" className={i < review.rating ? "text-yellow-400" : "text-gray-300"} />
+                                    <Star key={i} size={14} fill={i < review.rating ? "currentColor" : "none"} stroke="currentColor" className={i < review.rating ? "text-brand-gold" : "text-gray-300"} />
                                 ))}
                             </div>
                         </div>
-                        <p className="text-gray-600 text-sm leading-relaxed">"{review.message}"</p>
+                        <p className="text-brand-secondary leading-relaxed">"{review.message}"</p>
                     </motion.div>
                 ))}
             </div>

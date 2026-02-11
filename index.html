@@ -14,19 +14,34 @@
             theme: {
                 extend: {
                     colors: {
-                        'brand-blue': '#4db6ff',
-                        'brand-black': '#000000',
-                        'brand-white': '#ffffff',
-                        'brand-gray': '#f8f9fa',
-                        'brand-dark-gray': '#343a40'
+                        'brand-bg': '#F7F7F5',       // Soft off-white background
+                        'brand-card': '#FFFFFF',     // Pure white card bg
+                        'brand-primary': '#111111',  // Deep charcoal (Headings)
+                        'brand-secondary': '#4B5563', // Neutral gray (Body)
+                        'brand-muted': '#6B7280',    // Soft gray (Placeholders)
+                        'brand-border': '#E5E7EB',   // Light border
+                        'brand-accent': '#1F2937',   // Dark Slate (Primary Buttons/Actions)
+                        'brand-gold': '#C7A24C',     // Soft Gold (Luxury highlights)
+                        
+                        // Mapping old variable names to new palette for backward compatibility
+                        'brand-blue': '#1F2937',     // Replaced Blue with Dark Slate
+                        'brand-black': '#111111',
+                        'brand-white': '#FFFFFF',
+                        'brand-gray': '#F7F7F5',
                     },
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
                         heading: ['Poppins', 'sans-serif']
                     },
                     boxShadow: {
-                        'soft': '0 4px 20px rgba(0, 0, 0, 0.05)',
-                        'hover': '0 10px 25px rgba(77, 182, 255, 0.15)'
+                        'soft': '0 4px 30px rgba(0, 0, 0, 0.03)',
+                        'hover': '0 20px 40px rgba(0, 0, 0, 0.08)',
+                        'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.07)'
+                    },
+                    borderRadius: {
+                        'xl': '1rem',
+                        '2xl': '1.25rem',
+                        '3xl': '1.5rem',
                     }
                 }
             }
@@ -34,33 +49,38 @@
     </script>
     <style>
         body {
-            background-color: #ffffff;
-            color: #000000;
+            background-color: #F7F7F5;
+            color: #111111;
             font-family: 'Inter', sans-serif;
             -webkit-font-smoothing: antialiased;
         }
 
         h1, h2, h3, h4, h5, h6 {
             font-family: 'Poppins', sans-serif;
+            color: #111111;
+        }
+        
+        p {
+            color: #4B5563;
         }
 
         /* Custom Scrollbar */
         ::-webkit-scrollbar {
-            width: 8px;
+            width: 6px;
         }
         ::-webkit-scrollbar-track {
-            background: #ffffff;
+            background: #F7F7F5;
         }
         ::-webkit-scrollbar-thumb {
-            background: #e0e0e0;
-            border-radius: 4px;
+            background: #D1D5DB;
+            border-radius: 10px;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: #4db6ff;
+            background: #9CA3AF;
         }
         
         .selection-brand::selection {
-            background-color: #4db6ff;
+            background-color: #1F2937;
             color: #ffffff;
         }
     </style>

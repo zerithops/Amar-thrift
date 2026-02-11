@@ -58,39 +58,37 @@ const Shop: React.FC = () => {
   const formatPrice = (price: number) => `৳ ${price.toLocaleString()}`;
 
   return (
-    <div className="bg-brand-gray min-h-screen pb-20">
-      <div className="bg-white border-b border-gray-100 py-16 mb-12 shadow-soft">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 text-center">
-          <motion.h1 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-4xl md:text-5xl font-heading font-bold text-brand-black mb-4"
-          >
-            The Collection
-          </motion.h1>
-          <motion.p 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.1 }}
-            className="text-gray-500 max-w-xl mx-auto"
-          >
-            Explore our latest drop of premium vintage essentials.
-          </motion.p>
-        </div>
+    <div className="bg-brand-bg min-h-screen pb-24 pt-10">
+      <div className="max-w-7xl mx-auto px-6 lg:px-8 mb-16 text-center">
+        <motion.h1 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-4xl md:text-5xl font-heading font-bold text-brand-primary mb-6"
+        >
+          The Collection
+        </motion.h1>
+        <motion.p 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.1 }}
+          className="text-brand-secondary max-w-xl mx-auto text-lg font-light"
+        >
+          Explore our latest drop of premium vintage essentials.
+        </motion.p>
       </div>
 
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         {loading ? (
           <div className="flex justify-center py-32">
-            <Loader2 className="animate-spin text-brand-blue" size={40} />
+            <Loader2 className="animate-spin text-brand-accent" size={40} />
           </div>
         ) : products.length === 0 ? (
-          <div className="text-center py-32 bg-white rounded-2xl shadow-soft">
-             <ShoppingBag size={48} className="mx-auto text-gray-300 mb-4" />
-             <p className="text-gray-500 font-medium">No products currently available.</p>
+          <div className="text-center py-32 bg-brand-card rounded-3xl shadow-soft border border-brand-border">
+             <ShoppingBag size={48} className="mx-auto text-brand-muted mb-4" strokeWidth={1} />
+             <p className="text-brand-secondary font-medium">No products currently available.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12">
             {products.map((product, index) => (
               <motion.div 
                 key={product.id} 
@@ -99,37 +97,35 @@ const Shop: React.FC = () => {
                 viewport={{ once: true }} 
                 transition={{ duration: 0.5, delay: index * 0.05 }}
                 onClick={() => openModal(product)}
-                className="group bg-white rounded-2xl overflow-hidden shadow-soft hover:shadow-hover transition-all duration-300 transform hover:-translate-y-2 flex flex-col cursor-pointer"
+                className="group cursor-pointer flex flex-col"
               >
-                <div className="relative aspect-[3/4] overflow-hidden bg-gray-100">
+                <div className="relative aspect-[3/4] overflow-hidden bg-brand-bg rounded-xl mb-6 shadow-sm group-hover:shadow-md transition-shadow">
                   {product.images && product.images.length > 0 ? (
                     <img 
                       src={product.images[0]} 
                       alt={product.name} 
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>
                   )}
-                  <div className="absolute inset-0 bg-brand-blue/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                    <div className="bg-white/20 backdrop-blur-md p-3 rounded-full text-white">
-                      <ZoomIn size={24} />
+                  <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                    <div className="bg-white/90 backdrop-blur-md p-3 rounded-full text-brand-primary shadow-lg transform scale-90 group-hover:scale-100 transition-transform">
+                      <ZoomIn size={20} />
                     </div>
                   </div>
                 </div>
                 
-                <div className="p-6 flex flex-col flex-grow">
-                  <div className="flex-grow">
-                    <p className="text-xs font-bold text-brand-blue uppercase tracking-wider mb-1">{product.category}</p>
-                    <h3 className="text-lg font-bold text-brand-black mb-2 group-hover:text-brand-blue transition-colors">{product.name}</h3>
-                  </div>
-                  <div className="pt-4 border-t border-gray-100 flex items-center justify-between">
-                    <span className="text-xl font-heading font-bold text-brand-black">{formatPrice(product.price)}</span>
+                <div className="flex flex-col flex-grow px-1">
+                  <p className="text-xs font-bold text-brand-muted uppercase tracking-widest mb-2">{product.category}</p>
+                  <h3 className="text-lg font-heading font-medium text-brand-primary mb-2 group-hover:text-brand-accent transition-colors">{product.name}</h3>
+                  <div className="flex items-center justify-between mt-auto pt-2">
+                    <span className="text-lg font-medium text-brand-primary">{formatPrice(product.price)}</span>
                     <button 
                       onClick={(e) => handleAddToCart(product, e)}
-                      className="text-xs bg-brand-black text-white px-3 py-1.5 rounded-full font-bold uppercase tracking-wider hover:bg-brand-blue transition-colors"
+                      className="text-xs bg-brand-bg border border-brand-border text-brand-primary px-4 py-2 rounded-full font-bold uppercase tracking-wider hover:bg-brand-primary hover:text-white transition-all"
                     >
-                      Add to Cart
+                      Add
                     </button>
                   </div>
                 </div>
@@ -145,24 +141,24 @@ const Shop: React.FC = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+            className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
             onClick={closeModal}
           >
             <motion.div 
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white w-full max-w-5xl max-h-[90vh] rounded-3xl overflow-hidden shadow-2xl grid grid-cols-1 md:grid-cols-2 relative"
+              className="bg-brand-card w-full max-w-5xl max-h-[90vh] rounded-3xl overflow-hidden shadow-2xl grid grid-cols-1 md:grid-cols-2 relative"
             >
               <button 
                 onClick={closeModal} 
-                className="absolute top-4 right-4 z-10 bg-white/50 backdrop-blur hover:bg-white p-2 rounded-full transition-colors text-black"
+                className="absolute top-6 right-6 z-10 bg-white/80 backdrop-blur hover:bg-white p-2 rounded-full transition-colors text-brand-primary shadow-sm"
               >
                 <X size={24} />
               </button>
 
-              <div className="relative bg-gray-100 aspect-[4/5] md:aspect-auto md:h-full group">
+              <div className="relative bg-brand-bg aspect-[4/5] md:aspect-auto md:h-full group">
                 {selectedProduct.images && selectedProduct.images.length > 0 ? (
                   <img 
                     src={selectedProduct.images[currentImageIndex]} 
@@ -177,22 +173,22 @@ const Shop: React.FC = () => {
                   <>
                     <button 
                       onClick={prevImage}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity text-brand-primary"
                     >
                       <ChevronLeft size={20} />
                     </button>
                     <button 
                       onClick={nextImage}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity text-brand-primary"
                     >
                       <ChevronRight size={20} />
                     </button>
                     
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2">
+                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex space-x-2">
                       {selectedProduct.images.map((_, idx) => (
                         <div 
                           key={idx} 
-                          className={`w-2 h-2 rounded-full transition-colors ${idx === currentImageIndex ? 'bg-brand-blue' : 'bg-white/50'}`}
+                          className={`w-2 h-2 rounded-full transition-colors shadow-sm ${idx === currentImageIndex ? 'bg-white' : 'bg-white/40'}`}
                         />
                       ))}
                     </div>
@@ -200,35 +196,35 @@ const Shop: React.FC = () => {
                 )}
               </div>
 
-              <div className="p-8 md:p-12 flex flex-col h-full overflow-y-auto">
+              <div className="p-10 md:p-14 flex flex-col h-full overflow-y-auto bg-brand-card">
                 <div className="flex-grow">
-                   <p className="text-brand-blue font-bold uppercase tracking-widest text-xs mb-2">{selectedProduct.category}</p>
-                   <h2 className="text-3xl md:text-4xl font-heading font-bold text-brand-black mb-4">{selectedProduct.name}</h2>
-                   <p className="text-2xl font-bold text-brand-black mb-6">{formatPrice(selectedProduct.price)}</p>
+                   <p className="text-brand-gold font-bold uppercase tracking-widest text-xs mb-3">{selectedProduct.category}</p>
+                   <h2 className="text-3xl md:text-4xl font-heading font-bold text-brand-primary mb-4 leading-tight">{selectedProduct.name}</h2>
+                   <p className="text-2xl font-medium text-brand-primary mb-8">{formatPrice(selectedProduct.price)}</p>
                    
-                   <div className="space-y-4 mb-8">
-                     <h3 className="text-sm font-bold uppercase text-gray-400">Description</h3>
-                     <p className="text-gray-600 leading-relaxed">{selectedProduct.description}</p>
+                   <div className="space-y-4 mb-10">
+                     <h3 className="text-xs font-bold uppercase tracking-widest text-brand-muted">Description</h3>
+                     <p className="text-brand-secondary leading-relaxed text-lg font-light">{selectedProduct.description}</p>
                    </div>
 
-                   <div className="flex items-center space-x-4 mb-8">
+                   <div className="flex items-center space-x-4 mb-10">
                       {selectedProduct.stock > 0 ? (
-                        <span className="inline-flex items-center px-3 py-1 rounded-full bg-green-50 text-green-600 text-xs font-bold uppercase tracking-wider">
+                        <span className="inline-flex items-center px-4 py-1.5 rounded-full bg-green-50 border border-green-100 text-green-700 text-xs font-bold uppercase tracking-wider">
                           In Stock ({selectedProduct.stock})
                         </span>
                       ) : (
-                        <span className="inline-flex items-center px-3 py-1 rounded-full bg-red-50 text-red-600 text-xs font-bold uppercase tracking-wider">
+                        <span className="inline-flex items-center px-4 py-1.5 rounded-full bg-red-50 border border-red-100 text-red-600 text-xs font-bold uppercase tracking-wider">
                           Sold Out
                         </span>
                       )}
                    </div>
                 </div>
 
-                <div className="mt-auto pt-6 border-t border-gray-100">
+                <div className="mt-auto pt-8 border-t border-brand-border">
                   <button 
                     onClick={() => handleAddToCart(selectedProduct)}
                     disabled={selectedProduct.stock <= 0}
-                    className="w-full bg-brand-black text-white py-4 rounded-xl font-bold uppercase tracking-widest hover:bg-brand-blue transition-all shadow-lg hover:shadow-xl flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full bg-brand-primary text-white py-5 rounded-xl font-bold uppercase tracking-widest hover:bg-brand-accent transition-all shadow-lg hover:shadow-xl flex items-center justify-center space-x-3 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {added ? (
                       <>
