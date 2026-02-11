@@ -13,6 +13,14 @@ export enum PaymentStatus {
   REFUNDED = 'Refunded'
 }
 
+export interface UserProfile {
+  id: string;
+  email: string;
+  full_name: string;
+  role: 'customer' | 'admin' | 'staff';
+  created_at: number;
+}
+
 export interface CartItem {
   productId: string;
   name: string;

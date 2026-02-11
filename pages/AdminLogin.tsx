@@ -1,79 +1,57 @@
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Lock, ArrowRight } from 'lucide-react';
-import { ADMIN_CREDENTIALS } from '../constants';
+import { ShieldCheck, ArrowRight } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const AdminLogin: React.FC = () => {
   const navigate = useNavigate();
-  const [error, setError] = React.useState('');
-  const [formData, setFormData] = React.useState({
-    username: '',
-    password: ''
-  });
+  const { user, profile, isAdmin } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (
-      formData.username === ADMIN_CREDENTIALS.username &&
-      formData.password === ADMIN_CREDENTIALS.password
-    ) {
-      localStorage.setItem('adminSession', 'true');
-      navigate('/dashboard');
+  // If already logged in
+  if (user) {
+    if (isAdmin) {
+      return <Navigate to="/dashboard" replace />;
     } else {
-      setError('Invalid credentials. Please try again.');
+        // Logged in but not admin
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-brand-bg p-6">
+            <div className="text-center space-y-4">
+                <ShieldCheck size={48} className="mx-auto text-brand-muted" />
+                <h1 className="text-2xl font-bold text-brand-primary">Access Denied</h1>
+                <p className="text-brand-secondary">Your account does not have administrative privileges.</p>
+                <button onClick={() => navigate('/')} className="text-sm font-bold underline">Return Home</button>
+            </div>
+        </div>
+      );
     }
-  };
+  }
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center px-4 bg-brand-gray">
-      <motion.div
+    <div className="min-h-screen flex items-center justify-center bg-[#0b0b0b] px-4">
+      <motion.div 
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="w-full max-w-md bg-white border border-gray-100 p-10 rounded-3xl shadow-soft"
+        className="w-full max-w-md text-center space-y-8"
       >
-        <div className="flex justify-center mb-8">
-          <div className="p-4 bg-brand-blue/10 rounded-2xl">
-            <Lock className="text-brand-blue" size={32} />
-          </div>
-        </div>
-        
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-heading font-bold text-brand-black mb-2">Admin Portal</h1>
-          <p className="text-gray-500 text-sm">Secure access for staff only.</p>
+        <div>
+           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#e63946]/10 text-[#e63946] mb-6 border border-[#e63946]/20">
+             <ShieldCheck size={28} />
+           </div>
+           <h1 className="text-4xl font-heading font-bold text-white mb-2">Staff Access</h1>
+           <p className="text-white/40">Secure portal for Amar Thrift management.</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-widest text-gray-400 px-1">Username</label>
-            <input 
-              required 
-              type="text" 
-              value={formData.username} 
-              onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))} 
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-5 py-4 text-brand-black focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue transition-all"
-            />
-          </div>
+        <button 
+            onClick={() => navigate('/login')}
+            className="w-full bg-white text-black hover:bg-[#e63946] hover:text-white font-bold py-5 rounded-2xl transition-all duration-300 flex items-center justify-center space-x-3 group shadow-xl"
+        >
+            <span>Proceed to Login</span>
+            <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+        </button>
 
-          <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-widest text-gray-400 px-1">Password</label>
-            <input 
-              required 
-              type="password" 
-              value={formData.password} 
-              onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))} 
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-5 py-4 text-brand-black focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue transition-all"
-            />
-          </div>
-
-          {error && <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-red-500 text-xs text-center font-bold">{error}</motion.p>}
-
-          <button type="submit" className="w-full bg-brand-black text-white hover:bg-brand-blue font-bold py-4 rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center space-x-2 group">
-            <span>SIGN IN</span>
-            <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-          </button>
-        </form>
+        <p className="text-[10px] text-white/20 uppercase tracking-widest">Authorized Personnel Only</p>
       </motion.div>
     </div>
   );

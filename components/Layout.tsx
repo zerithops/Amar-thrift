@@ -1,20 +1,23 @@
 
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Instagram, Mail, Menu, X, MoreVertical, ShoppingBag } from 'lucide-react';
+import { Instagram, Mail, Menu, X, MoreVertical, ShoppingBag, User, LogOut, LayoutDashboard } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
-  const [isAdminMenuOpen, setIsAdminMenuOpen] = React.useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = React.useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { cartCount } = useCart();
+  const { user, profile, isAdmin, signOut } = useAuth();
   const [scrolled, setScrolled] = React.useState(false);
 
   React.useEffect(() => {
     setIsMenuOpen(false);
+    setIsUserMenuOpen(false);
   }, [location]);
 
   React.useEffect(() => {
@@ -24,6 +27,11 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate('/');
+  };
 
   const navLinks = [
     { name: 'Home', path: '/' },
@@ -81,41 +89,65 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                  )}
                </Link>
 
-               <Link to="/shop" className={`hidden md:flex items-center space-x-2 text-sm font-bold px-6 py-2.5 rounded-full transition-all duration-300 shadow-sm ${
-                   scrolled || location.pathname !== '/' 
-                   ? 'bg-brand-primary text-white hover:bg-brand-accent hover:opacity-90' 
-                   : 'bg-white text-brand-primary hover:bg-gray-100'
-               }`}>
-                 <span>Shop Now</span>
-               </Link>
-
-               {/* Admin Menu */}
+               {/* Auth / User Menu */}
                <div className="relative">
-                 <button 
-                   onClick={() => setIsAdminMenuOpen(!isAdminMenuOpen)}
-                   className={`p-2 transition-colors ${scrolled || location.pathname !== '/' ? 'text-brand-secondary hover:text-brand-primary' : 'text-white/80 hover:text-white'}`}
-                 >
-                   <MoreVertical size={20} />
-                 </button>
+                 {user ? (
+                    <button 
+                        onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                        className={`flex items-center space-x-2 p-1.5 rounded-full transition-all ${
+                            scrolled || location.pathname !== '/' 
+                            ? 'bg-gray-100 text-brand-primary hover:bg-gray-200' 
+                            : 'bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm'
+                        }`}
+                    >
+                        <div className="w-8 h-8 rounded-full bg-brand-gold text-white flex items-center justify-center font-bold text-xs">
+                            {user.email?.charAt(0).toUpperCase()}
+                        </div>
+                    </button>
+                 ) : (
+                    <Link to="/login" className={`hidden md:flex items-center space-x-2 text-sm font-bold px-6 py-2.5 rounded-full transition-all duration-300 shadow-sm ${
+                        scrolled || location.pathname !== '/' 
+                        ? 'bg-brand-primary text-white hover:bg-brand-accent hover:opacity-90' 
+                        : 'bg-white text-brand-primary hover:bg-gray-100'
+                    }`}>
+                        <span>Login</span>
+                    </Link>
+                 )}
                  
                  <AnimatePresence>
-                   {isAdminMenuOpen && (
+                   {isUserMenuOpen && user && (
                      <>
-                       <div className="fixed inset-0 z-10" onClick={() => setIsAdminMenuOpen(false)}></div>
+                       <div className="fixed inset-0 z-10" onClick={() => setIsUserMenuOpen(false)}></div>
                        <motion.div 
                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
                          animate={{ opacity: 1, y: 0, scale: 1 }}
                          exit={{ opacity: 0, scale: 0.95 }}
-                         className="absolute right-0 top-full mt-2 w-48 bg-white border border-brand-border rounded-xl shadow-hover z-20 py-2"
+                         className="absolute right-0 top-full mt-2 w-56 bg-white border border-brand-border rounded-2xl shadow-hover z-20 py-2 overflow-hidden"
                        >
+                         <div className="px-4 py-3 border-b border-gray-100">
+                            <p className="text-sm font-bold text-brand-primary truncate">{profile?.full_name}</p>
+                            <p className="text-xs text-brand-muted truncate">{user.email}</p>
+                            <span className="inline-block mt-2 px-2 py-0.5 bg-gray-100 text-[10px] font-bold uppercase tracking-wide text-brand-secondary rounded">
+                                {profile?.role || 'Customer'}
+                            </span>
+                         </div>
+                         
+                         {isAdmin && (
+                            <button
+                                onClick={() => { setIsUserMenuOpen(false); navigate('/dashboard'); }}
+                                className="w-full text-left px-4 py-3 text-sm font-medium text-brand-secondary hover:bg-brand-bg hover:text-brand-primary transition-colors flex items-center space-x-2"
+                            >
+                                <LayoutDashboard size={16} />
+                                <span>Dashboard</span>
+                            </button>
+                         )}
+
                          <button
-                           onClick={() => {
-                             setIsAdminMenuOpen(false);
-                             navigate('/admin');
-                           }}
-                           className="w-full text-left px-4 py-3 text-sm font-medium text-brand-secondary hover:bg-brand-bg hover:text-brand-primary transition-colors"
+                           onClick={handleLogout}
+                           className="w-full text-left px-4 py-3 text-sm font-medium text-red-500 hover:bg-red-50 transition-colors flex items-center space-x-2"
                          >
-                           Admin Panel
+                           <LogOut size={16} />
+                           <span>Sign Out</span>
                          </button>
                        </motion.div>
                      </>
@@ -142,7 +174,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="md:hidden bg-white fixed inset-0 z-40 pt-28 px-6 overflow-hidden"
+            className="md:hidden bg-white fixed inset-0 z-40 pt-28 px-6 overflow-hidden flex flex-col"
           >
             <div className="flex flex-col space-y-6">
               {navLinks.map((link, idx) => (
@@ -161,20 +193,40 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   </Link>
                 </motion.div>
               ))}
-              <motion.div 
+            </div>
+
+            <motion.div 
                  initial={{ opacity: 0, y: 20 }}
                  animate={{ opacity: 1, y: 0 }}
                  transition={{ delay: 0.2 }}
-                 className="pt-8 border-t border-brand-border"
-              >
-                <Link to="/cart" onClick={() => setIsMenuOpen(false)} className="block w-full text-center bg-brand-bg text-brand-primary py-4 rounded-xl font-bold uppercase tracking-wide text-sm hover:bg-gray-200 transition-colors mb-4 border border-brand-border">
-                  View Cart ({cartCount})
-                </Link>
-                <Link to="/shop" onClick={() => setIsMenuOpen(false)} className="block w-full text-center bg-brand-primary text-white py-4 rounded-xl font-bold uppercase tracking-wide text-sm hover:opacity-90 transition-colors shadow-lg">
-                  Start Shopping
-                </Link>
-              </motion.div>
-            </div>
+                 className="mt-auto pb-10"
+            >
+                {user ? (
+                    <div className="space-y-4">
+                        <div className="flex items-center space-x-3 mb-6 p-4 bg-brand-bg rounded-xl">
+                            <div className="w-10 h-10 rounded-full bg-brand-gold text-white flex items-center justify-center font-bold">
+                                {user.email?.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                                <p className="font-bold text-brand-primary">{profile?.full_name}</p>
+                                <p className="text-xs text-brand-muted">{user.email}</p>
+                            </div>
+                        </div>
+                        {isAdmin && (
+                            <Link to="/dashboard" onClick={() => setIsMenuOpen(false)} className="block w-full text-center bg-brand-bg text-brand-primary py-4 rounded-xl font-bold uppercase tracking-wide text-sm hover:bg-gray-200 transition-colors border border-brand-border">
+                                Admin Dashboard
+                            </Link>
+                        )}
+                        <button onClick={() => { handleLogout(); setIsMenuOpen(false); }} className="block w-full text-center bg-red-50 text-red-500 py-4 rounded-xl font-bold uppercase tracking-wide text-sm hover:bg-red-100 transition-colors border border-red-100">
+                            Sign Out
+                        </button>
+                    </div>
+                ) : (
+                    <Link to="/login" onClick={() => setIsMenuOpen(false)} className="block w-full text-center bg-brand-primary text-white py-4 rounded-xl font-bold uppercase tracking-wide text-sm hover:opacity-90 transition-colors shadow-lg">
+                        Login / Sign Up
+                    </Link>
+                )}
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
