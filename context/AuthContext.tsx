@@ -10,7 +10,6 @@ interface AuthContextType {
   profile: UserProfile | null;
   loading: boolean;
   isAdmin: boolean;
-  signInWithGoogle: () => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signUpWithEmail: (email: string, password: string, name: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -61,7 +60,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .single();
 
       if (error && error.code === 'PGRST116') {
-        // Profile doesn't exist (likely Google Auth first time), create it
+        // Profile doesn't exist, create it (Fallback)
         const newProfile = {
           id: currentUser.id,
           email: currentUser.email,
@@ -85,21 +84,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('Error fetching/creating profile:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const signInWithGoogle = async () => {
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin,
-        },
-      });
-      if (error) throw error;
-    } catch (error) {
-      console.error("Error signing in with Google:", error);
-      alert("Failed to sign in. Please try again.");
     }
   };
 
@@ -141,8 +125,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (profileError) {
         console.error("Error creating profile:", profileError);
-        // User exists in Auth but not Profile. fetchOrCreateProfile will handle this via onAuthStateChange, 
-        // but logging it here is important.
       }
     }
   };
@@ -164,7 +146,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       profile, 
       loading, 
       isAdmin, 
-      signInWithGoogle, 
       signInWithEmail,
       signUpWithEmail,
       signOut 
