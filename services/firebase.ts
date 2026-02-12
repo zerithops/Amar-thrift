@@ -267,6 +267,30 @@ export const firebaseService = {
     }));
   },
 
+  async getProductsPaginated(page: number, limit: number): Promise<Product[]> {
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .range(from, to);
+
+    if (error) return [];
+
+    return data.map((p: any) => ({
+      id: p.id,
+      name: p.name,
+      price: p.price,
+      images: Array.isArray(p.images) ? p.images : (p.images ? [p.images] : []), 
+      description: p.description,
+      category: p.category,
+      stock: p.stock,
+      createdAt: this.toTimestamp(p.created_at)
+    }));
+  },
+
   async getProduct(id: string): Promise<Product | null> {
     const { data, error } = await supabase
       .from('products')
