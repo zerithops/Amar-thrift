@@ -51,7 +51,7 @@ export interface Order {
   createdAt: number;
 }
 
-export type Category = 'T-Shirt' | 'Hoodie' | 'Jacket' | 'Pants' | 'Sweater' | 'Accessories';
+export type Category = 'T-Shirt' | 'Shirt' | 'Hoodie' | 'Jacket' | 'Pants' | 'Sweater' | 'Accessories';
 
 export interface Product {
   id?: string;

@@ -5,7 +5,7 @@ import { ArrowLeft, Save, Loader2, Upload, X, Trash2 } from 'lucide-react';
 import { firebaseService } from '../services/firebase';
 import { Category } from '../types';
 
-const CATEGORIES: Category[] = ['T-Shirt', 'Hoodie', 'Jacket', 'Pants', 'Sweater', 'Accessories'];
+const CATEGORIES: Category[] = ['T-Shirt', 'Shirt', 'Hoodie', 'Jacket', 'Pants', 'Sweater', 'Accessories'];
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 const AddEditProduct: React.FC = () => {
