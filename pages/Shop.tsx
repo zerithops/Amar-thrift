@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Loader2, ShoppingBag, ZoomIn } from 'lucide-react';
 import { firebaseService } from '../services/firebase';
 import { Product } from '../types';
@@ -12,16 +12,45 @@ const Shop: React.FC = () => {
   const [loadingMore, setLoadingMore] = React.useState(false);
   const [page, setPage] = React.useState(1);
   const [hasMore, setHasMore] = React.useState(true);
+  
   const navigate = useNavigate();
+  const { categoryId } = useParams<{ categoryId: string }>();
 
   const PRODUCTS_PER_PAGE = 27;
 
+  // Normalize slug to match DB Category Enum (Capitalized)
+  const getCategoryFromSlug = (slug?: string) => {
+    if (!slug) return null;
+    const map: Record<string, string> = {
+      't-shirt': 'T-Shirt',
+      'shirt': 'Shirt',
+      'hoodie': 'Hoodie',
+      'jacket': 'Jacket',
+      'pants': 'Pants',
+      'sweater': 'Sweater',
+      'accessories': 'Accessories'
+    };
+    return map[slug.toLowerCase()] || slug.charAt(0).toUpperCase() + slug.slice(1);
+  };
+
   const fetchProducts = async (pageNum: number) => {
     try {
-      const data = await firebaseService.getProductsPaginated(pageNum, PRODUCTS_PER_PAGE);
-      
-      if (data.length < PRODUCTS_PER_PAGE) {
-        setHasMore(false);
+      let data: Product[] = [];
+      const categoryFilter = getCategoryFromSlug(categoryId);
+
+      if (categoryFilter) {
+        // Fetch all products for this category (ignoring pagination for now for simplicity in category view)
+        // or you could implement paginated category fetch in future
+        if (pageNum === 1) {
+            data = await firebaseService.getProductsByCategory(categoryFilter);
+            setHasMore(false); // Disable load more for category view for now as we fetch all
+        }
+      } else {
+        // Standard Shop Page (Paginated)
+        data = await firebaseService.getProductsPaginated(pageNum, PRODUCTS_PER_PAGE);
+        if (data.length < PRODUCTS_PER_PAGE) {
+            setHasMore(false);
+        }
       }
 
       if (pageNum === 1) {
@@ -39,10 +68,15 @@ const Shop: React.FC = () => {
   };
 
   React.useEffect(() => {
+    setProducts([]);
+    setLoading(true);
+    setHasMore(true);
+    setPage(1);
     fetchProducts(1);
-  }, []);
+  }, [categoryId]);
 
   const handleLoadMore = () => {
+    if (categoryId) return; // Disable load more for category view
     setLoadingMore(true);
     const nextPage = page + 1;
     setPage(nextPage);
@@ -53,6 +87,8 @@ const Shop: React.FC = () => {
 
   const INSTAGRAM_LINK = "https://www.instagram.com/amar_thrift_/";
 
+  const pageTitle = categoryId ? getCategoryFromSlug(categoryId) : "The Collection";
+
   return (
     <div className="bg-brand-bg min-h-screen pb-24 pt-10">
       <div className="max-w-7xl mx-auto px-6 lg:px-8 mb-16 text-center">
@@ -61,7 +97,7 @@ const Shop: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           className="text-4xl md:text-5xl font-heading font-bold text-brand-primary mb-6"
         >
-          The Collection
+          {pageTitle}
         </motion.h1>
         <motion.p 
           initial={{ opacity: 0 }}
@@ -69,7 +105,10 @@ const Shop: React.FC = () => {
           transition={{ delay: 0.1 }}
           className="text-brand-secondary max-w-xl mx-auto text-lg font-light"
         >
-          Explore our latest drop of premium vintage essentials.
+          {categoryId 
+            ? `Browse our exclusive ${getCategoryFromSlug(categoryId)?.toLowerCase()} selection.`
+            : "Explore our latest drop of premium vintage essentials."
+          }
         </motion.p>
       </div>
 
@@ -81,7 +120,12 @@ const Shop: React.FC = () => {
         ) : products.length === 0 ? (
           <div className="text-center py-32 bg-brand-card rounded-3xl shadow-soft border border-brand-border">
              <ShoppingBag size={48} className="mx-auto text-brand-muted mb-4" strokeWidth={1} />
-             <p className="text-brand-secondary font-medium">No products currently available.</p>
+             <p className="text-brand-secondary font-medium">
+                {categoryId 
+                    ? `No ${getCategoryFromSlug(categoryId)} found.` 
+                    : "No products currently available."
+                }
+             </p>
           </div>
         ) : (
           <>

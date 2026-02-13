@@ -290,6 +290,27 @@ export const firebaseService = {
       createdAt: this.toTimestamp(p.created_at)
     }));
   },
+  
+  async getProductsByCategory(category: string): Promise<Product[]> {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('category', category)
+      .order('created_at', { ascending: false });
+
+    if (error) return [];
+
+    return data.map((p: any) => ({
+      id: p.id,
+      name: p.name,
+      price: p.price,
+      images: Array.isArray(p.images) ? p.images : (p.images ? [p.images] : []), 
+      description: p.description,
+      category: p.category,
+      stock: p.stock,
+      createdAt: this.toTimestamp(p.created_at)
+    }));
+  },
 
   async getProduct(id: string): Promise<Product | null> {
     const { data, error } = await supabase
