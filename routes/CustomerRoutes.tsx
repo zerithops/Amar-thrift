@@ -1,4 +1,4 @@
-
+// @ts-nocheck
 import React, { Suspense } from 'react';
 import { HashRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';

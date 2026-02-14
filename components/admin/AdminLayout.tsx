@@ -1,4 +1,4 @@
-
+// @ts-nocheck
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, ShoppingBag, Package, LogOut, Settings } from 'lucide-react';

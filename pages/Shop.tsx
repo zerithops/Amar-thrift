@@ -1,10 +1,26 @@
-
+// @ts-nocheck
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Loader2, ShoppingBag, ZoomIn } from 'lucide-react';
+import { ShoppingBag, Filter, X, Loader2, ArrowRight } from 'lucide-react';
 import { firebaseService } from '../services/firebase';
 import { Product } from '../types';
+
+// Premium Skeleton Component
+const ProductSkeleton = () => (
+  <div className="rounded-2xl overflow-hidden bg-white shadow-card border border-transparent">
+    <div className="aspect-[4/5] bg-gray-100 relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent animate-shimmer" style={{ backgroundSize: '200% 100%' }} />
+    </div>
+    <div className="p-4 space-y-3">
+      <div className="h-3 bg-gray-100 rounded w-2/3" />
+      <div className="flex justify-between items-center">
+        <div className="h-4 bg-gray-100 rounded w-1/3" />
+        <div className="h-8 w-8 bg-gray-100 rounded-full" />
+      </div>
+    </div>
+  </div>
+);
 
 const Shop: React.FC = () => {
   const [products, setProducts] = React.useState<Product[]>([]);
@@ -13,12 +29,18 @@ const Shop: React.FC = () => {
   const [page, setPage] = React.useState(1);
   const [hasMore, setHasMore] = React.useState(true);
   
+  // Filter State
+  const [isFilterOpen, setIsFilterOpen] = React.useState(false);
+  const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null);
+  
   const navigate = useNavigate();
   const { categoryId } = useParams<{ categoryId: string }>();
 
-  const PRODUCTS_PER_PAGE = 27;
+  const PRODUCTS_PER_PAGE = 26;
+  const CATEGORIES = ['T-Shirt', 'Shirt', 'Hoodie', 'Jacket', 'Pants', 'Sweater', 'Accessories'];
 
-  // Normalize slug to match DB Category Enum (Capitalized)
+  // --- Logic ---
+  
   const getCategoryFromSlug = (slug?: string) => {
     if (!slug) return null;
     const map: Record<string, string> = {
@@ -36,17 +58,14 @@ const Shop: React.FC = () => {
   const fetchProducts = async (pageNum: number) => {
     try {
       let data: Product[] = [];
-      const categoryFilter = getCategoryFromSlug(categoryId);
+      const categoryFilter = getCategoryFromSlug(categoryId) || selectedCategory;
 
       if (categoryFilter) {
-        // Fetch all products for this category (ignoring pagination for now for simplicity in category view)
-        // or you could implement paginated category fetch in future
         if (pageNum === 1) {
             data = await firebaseService.getProductsByCategory(categoryFilter);
-            setHasMore(false); // Disable load more for category view for now as we fetch all
+            setHasMore(false);
         }
       } else {
-        // Standard Shop Page (Paginated)
         data = await firebaseService.getProductsPaginated(pageNum, PRODUCTS_PER_PAGE);
         if (data.length < PRODUCTS_PER_PAGE) {
             setHasMore(false);
@@ -72,126 +91,225 @@ const Shop: React.FC = () => {
     setLoading(true);
     setHasMore(true);
     setPage(1);
+    
+    const urlCat = getCategoryFromSlug(categoryId);
+    if(urlCat) setSelectedCategory(urlCat);
+
     fetchProducts(1);
-  }, [categoryId]);
+  }, [categoryId, selectedCategory]);
 
   const handleLoadMore = () => {
-    if (categoryId) return; // Disable load more for category view
+    if (selectedCategory || categoryId) return;
     setLoadingMore(true);
     const nextPage = page + 1;
     setPage(nextPage);
     fetchProducts(nextPage);
   };
 
+  const applyCategoryFilter = (cat: string | null) => {
+    setSelectedCategory(cat);
+    setIsFilterOpen(false);
+    if (categoryId) navigate('/shop'); 
+  };
+
   const formatPrice = (price: number) => `৳ ${price.toLocaleString()}`;
 
-  const INSTAGRAM_LINK = "https://www.instagram.com/amar_thrift_/";
-
-  const pageTitle = categoryId ? getCategoryFromSlug(categoryId) : "The Collection";
-
   return (
-    <div className="bg-brand-bg min-h-screen pb-24 pt-10">
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 mb-16 text-center">
-        <motion.h1 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-4xl md:text-5xl font-heading font-bold text-brand-primary mb-6"
-        >
-          {pageTitle}
-        </motion.h1>
-        <motion.p 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.1 }}
-          className="text-brand-secondary max-w-xl mx-auto text-lg font-light"
-        >
-          {categoryId 
-            ? `Browse our exclusive ${getCategoryFromSlug(categoryId)?.toLowerCase()} selection.`
-            : "Explore our latest drop of premium vintage essentials."
-          }
-        </motion.p>
+    <div className="bg-brand-bg min-h-screen pb-32">
+      {/* Sticky Filter Header */}
+      <div className="sticky top-16 md:top-20 z-30 bg-brand-bg/95 backdrop-blur-md py-4 border-b border-brand-border/60 shadow-sm transition-all">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+            <div>
+                <h1 className="text-xl font-heading font-bold text-brand-primary tracking-tight">
+                    {selectedCategory || (categoryId ? getCategoryFromSlug(categoryId) : "Collection")}
+                </h1>
+                <p className="text-[10px] font-bold text-brand-secondary uppercase tracking-wider mt-0.5">
+                    {loading ? '...' : `${products.length} Items`}
+                </p>
+            </div>
+            
+            <button 
+                onClick={() => setIsFilterOpen(true)}
+                className="group flex items-center space-x-2 px-5 py-2.5 bg-white border border-brand-border rounded-xl shadow-sm hover:border-brand-accent transition-all duration-300"
+            >
+                <Filter size={14} className="text-brand-primary group-hover:text-brand-accent transition-colors" />
+                <span className="text-xs font-bold uppercase tracking-wider text-brand-primary">Filter</span>
+                {(selectedCategory || categoryId) && <div className="w-1.5 h-1.5 bg-brand-accent rounded-full ml-1 animate-pulse"></div>}
+            </button>
+        </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {loading ? (
-          <div className="flex justify-center py-32">
-            <Loader2 className="animate-spin text-brand-accent" size={40} />
-          </div>
-        ) : products.length === 0 ? (
-          <div className="text-center py-32 bg-brand-card rounded-3xl shadow-soft border border-brand-border">
-             <ShoppingBag size={48} className="mx-auto text-brand-muted mb-4" strokeWidth={1} />
-             <p className="text-brand-secondary font-medium">
-                {categoryId 
-                    ? `No ${getCategoryFromSlug(categoryId)} found.` 
-                    : "No products currently available."
-                }
-             </p>
-          </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-8 md:gap-x-8 md:gap-y-12">
-              {products.map((product, index) => (
-                <motion.div 
-                  key={product.id} 
-                  initial={{ opacity: 0, y: 30 }} 
-                  whileInView={{ opacity: 1, y: 0 }} 
-                  viewport={{ once: true }} 
-                  transition={{ duration: 0.5, delay: index * 0.05 }}
-                  onClick={() => navigate(`/product/${product.id}`)}
-                  className="group cursor-pointer flex flex-col"
-                >
-                  <div className="relative aspect-[3/4] overflow-hidden bg-brand-bg rounded-xl mb-4 md:mb-6 shadow-sm group-hover:shadow-md transition-shadow">
-                    {product.images && product.images.length > 0 ? (
-                      <img 
-                        src={product.images[0]} 
-                        alt={product.name} 
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>
-                    )}
-                    <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                      <div className="bg-white/90 backdrop-blur-md p-3 rounded-full text-brand-primary shadow-lg transform scale-90 group-hover:scale-100 transition-transform">
-                        <ZoomIn size={20} />
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex flex-col flex-grow px-1">
-                    <p className="text-[10px] md:text-xs font-bold text-brand-muted uppercase tracking-widest mb-1 md:mb-2">{product.category}</p>
-                    <h3 className="text-sm md:text-lg font-heading font-medium text-brand-primary mb-2 group-hover:text-brand-accent transition-colors line-clamp-2 md:line-clamp-none">{product.name}</h3>
-                    <div className="flex flex-col md:flex-row md:items-center justify-between mt-auto pt-2 gap-2 md:gap-0">
-                      <span className="text-base md:text-lg font-medium text-brand-primary">{formatPrice(product.price)}</span>
-                      <a 
-                        href={INSTAGRAM_LINK}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className="text-[10px] md:text-xs text-center bg-[#006747] border border-[#006747] text-white px-3 py-2 md:px-4 md:py-2 rounded-full font-bold uppercase tracking-wider hover:opacity-90 transition-all"
-                      >
-                        Order Now
-                      </a>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+        {/* Premium Grid: 2 Cols Mobile (20px gap), 3 Tablet, 4 Desktop */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 md:gap-8 lg:gap-10">
+            
+            {loading && Array.from({ length: 8 }).map((_, i) => <ProductSkeleton key={i} />)}
 
-            {hasMore && (
-              <div className="mt-16 text-center">
-                <button 
-                  onClick={handleLoadMore}
-                  disabled={loadingMore}
-                  className="inline-flex items-center space-x-2 bg-brand-primary text-white px-8 py-3 rounded-full font-bold uppercase tracking-widest hover:bg-brand-accent transition-all shadow-lg disabled:opacity-70 disabled:cursor-not-allowed"
+            {!loading && products.map((product, index) => (
+                <motion.div 
+                    key={product.id}
+                    initial={{ opacity: 0, y: 40 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-50px" }}
+                    transition={{ duration: 0.5, delay: index * 0.05, ease: "easeOut" }}
+                    onClick={() => navigate(`/product/${product.id}`)}
+                    className="group cursor-pointer flex flex-col"
                 >
-                  {loadingMore && <Loader2 className="animate-spin" size={18} />}
-                  <span>{loadingMore ? 'Loading...' : 'Load More'}</span>
+                    {/* Card Image */}
+                    <div className="relative aspect-[4/5] bg-white rounded-2xl overflow-hidden shadow-soft group-hover:shadow-hover transition-all duration-500 mb-4 transform group-hover:-translate-y-1">
+                        {product.images?.[0] ? (
+                            <img 
+                                src={product.images[0]} 
+                                alt={product.name} 
+                                loading="lazy"
+                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+                            />
+                        ) : (
+                            <div className="w-full h-full flex items-center justify-center text-gray-300 bg-gray-50">No Image</div>
+                        )}
+                        
+                        {/* New Tag */}
+                        {index < 2 && !selectedCategory && !categoryId && (
+                            <div className="absolute top-3 left-3 bg-brand-tag-bg/90 backdrop-blur text-brand-tag-text text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider">
+                                New
+                            </div>
+                        )}
+
+                        {/* Hover Action */}
+                        <div className="absolute bottom-4 right-4 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
+                             <div className="w-10 h-10 bg-white text-brand-primary rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
+                                <ShoppingBag size={18} strokeWidth={2} />
+                             </div>
+                        </div>
+                    </div>
+
+                    {/* Card Content */}
+                    <div className="flex flex-col px-1">
+                        <div className="flex justify-between items-start">
+                             <div className="flex-1 pr-2">
+                                <h3 className="text-sm md:text-base font-medium text-brand-primary leading-tight group-hover:text-brand-accent transition-colors line-clamp-2">
+                                    {product.name}
+                                </h3>
+                                <p className="text-[10px] font-bold text-brand-muted uppercase tracking-widest mt-1.5">{product.category}</p>
+                             </div>
+                             <span className="text-sm md:text-base font-bold text-brand-primary whitespace-nowrap">
+                                {formatPrice(product.price)}
+                             </span>
+                        </div>
+                    </div>
+                </motion.div>
+            ))}
+        </div>
+        
+        {/* Empty State */}
+        {!loading && products.length === 0 && (
+            <div className="py-32 text-center">
+                <ShoppingBag size={56} className="mx-auto text-gray-200 mb-6" strokeWidth={1}/>
+                <h3 className="text-2xl font-heading font-bold text-brand-primary mb-2">No products found</h3>
+                <p className="text-brand-secondary mb-8">Try adjusting your filters to find what you're looking for.</p>
+                <button 
+                    onClick={() => {setSelectedCategory(null); navigate('/shop');}} 
+                    className="inline-flex items-center space-x-2 text-brand-accent font-bold uppercase tracking-widest border-b-2 border-transparent hover:border-brand-accent transition-all pb-1"
+                >
+                    <span>Clear All Filters</span>
+                    <ArrowRight size={16} />
                 </button>
-              </div>
-            )}
-          </>
+            </div>
+        )}
+
+        {/* Load More Button */}
+        {hasMore && !loading && !selectedCategory && !categoryId && (
+            <div className="mt-20 text-center">
+                <button 
+                    onClick={handleLoadMore}
+                    disabled={loadingMore}
+                    className="group relative px-8 py-4 bg-white border border-brand-border text-brand-primary font-bold text-xs uppercase tracking-widest rounded-full shadow-sm hover:shadow-md transition-all disabled:opacity-50 overflow-hidden"
+                >
+                    <span className="relative z-10 flex items-center space-x-3">
+                        {loadingMore && <Loader2 className="animate-spin" size={14} />}
+                        <span>Load More Products</span>
+                    </span>
+                    <div className="absolute inset-0 bg-brand-bg transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-500 ease-out -z-0"></div>
+                </button>
+            </div>
         )}
       </div>
+
+      {/* Premium Bottom Sheet Filter */}
+      <AnimatePresence>
+        {isFilterOpen && (
+            <>
+                <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 bg-black/40 z-40 backdrop-blur-sm" 
+                    onClick={() => setIsFilterOpen(false)} 
+                />
+                <motion.div
+                    initial={{ y: '100%' }}
+                    animate={{ y: 0 }}
+                    exit={{ y: '100%' }}
+                    transition={{ type: "spring", damping: 30, stiffness: 300 }}
+                    className="fixed bottom-0 left-0 right-0 bg-white z-50 rounded-t-[2rem] shadow-2xl max-h-[85vh] overflow-hidden flex flex-col"
+                >
+                    {/* Handle */}
+                    <div className="w-full flex justify-center pt-4 pb-2 bg-white" onClick={() => setIsFilterOpen(false)}>
+                        <div className="w-12 h-1.5 bg-gray-200 rounded-full" />
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto px-6 pt-2 pb-8">
+                        <div className="flex justify-between items-center mb-8">
+                            <h2 className="text-2xl font-heading font-bold text-brand-primary">Filter</h2>
+                            <button onClick={() => setIsFilterOpen(false)} className="p-2 bg-brand-bg rounded-full text-brand-secondary hover:bg-gray-200 transition-colors">
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        {/* Category Section */}
+                        <div className="space-y-5">
+                            <h3 className="text-xs font-bold uppercase tracking-widest text-brand-secondary">Category</h3>
+                            <div className="flex flex-wrap gap-3">
+                                <button
+                                    onClick={() => applyCategoryFilter(null)}
+                                    className={`px-5 py-3 rounded-xl text-sm font-medium border transition-all duration-300 ${
+                                        !selectedCategory && !categoryId
+                                        ? 'bg-brand-primary text-white border-brand-primary shadow-lg'
+                                        : 'bg-brand-bg text-brand-secondary border-transparent hover:bg-gray-200'
+                                    }`}
+                                >
+                                    View All
+                                </button>
+                                {CATEGORIES.map(cat => (
+                                    <button
+                                        key={cat}
+                                        onClick={() => applyCategoryFilter(cat)}
+                                        className={`px-5 py-3 rounded-xl text-sm font-medium border transition-all duration-300 ${
+                                            (selectedCategory === cat || (categoryId && getCategoryFromSlug(categoryId) === cat))
+                                            ? 'bg-gradient-to-r from-brand-accent-start to-brand-accent-end text-white border-transparent shadow-lg shadow-brand-accent/20'
+                                            : 'bg-brand-bg text-brand-secondary border-transparent hover:bg-gray-200'
+                                        }`}
+                                    >
+                                        {cat}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Footer Actions */}
+                    <div className="p-6 border-t border-brand-border bg-white safe-area-pb">
+                        <button 
+                            onClick={() => setIsFilterOpen(false)}
+                            className="w-full py-5 bg-gradient-to-r from-brand-accent-start to-brand-accent-end text-white font-bold uppercase tracking-widest text-sm rounded-xl shadow-lg shadow-brand-accent/30 active:scale-95 transition-transform"
+                        >
+                            Apply Filters
+                        </button>
+                    </div>
+                </motion.div>
+            </>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

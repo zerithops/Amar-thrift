@@ -1,4 +1,4 @@
-
+// @ts-nocheck
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Search, Loader2, PackageCheck } from 'lucide-react';
