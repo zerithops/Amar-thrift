@@ -17,9 +17,10 @@
                     colors: {
                         'brand-bg': '#F5F6F8',       // Premium Light Gray Background
                         'brand-card': '#FFFFFF',     // Pure White Card
-                        'brand-primary': '#111827',  // Soft Black (Headings)
-                        'brand-secondary': '#6B7280', // Muted Gray (Body)
-                        'brand-border': '#E6E8EC',   // Subtle Border
+                        'brand-primary': '#111827',  // Solid Black (Headings/Body)
+                        'brand-secondary': '#4B5563', // Darker Gray for readable subtext
+                        'brand-muted': '#9CA3AF',    // Muted text for metadata only
+                        'brand-border': '#E5E7EB',   // Subtle Border
                         
                         // Premium Accent System (Purple Gradient)
                         'brand-accent-start': '#5B3DF5',
@@ -27,11 +28,10 @@
                         'brand-accent-end': '#8065FF',
                         
                         // Tag System
-                        'brand-tag-bg': '#EDE9FE',   // Lavender
-                        'brand-tag-text': '#6D28D9', // Deep Purple
+                        'brand-tag-bg': '#F3F0FF',   // Lavender
+                        'brand-tag-text': '#7C3AED', // Deep Purple
                         
                         'brand-gold': '#C7A24C',     // Legacy
-                        'brand-muted': '#9CA3AF',
                     },
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
@@ -39,7 +39,7 @@
                     },
                     boxShadow: {
                         'soft': '0 4px 20px rgba(0, 0, 0, 0.03)',
-                        'hover': '0 10px 25px rgba(0, 0, 0, 0.06), 0 4px 10px rgba(108, 77, 255, 0.05)', // Tinted hover shadow
+                        'hover': '0 10px 25px rgba(0, 0, 0, 0.06), 0 4px 10px rgba(108, 77, 255, 0.05)',
                         'glass': '0 4px 30px rgba(0, 0, 0, 0.03)',
                         'card': '0 1px 3px rgba(0,0,0,0.05)'
                     },
@@ -69,7 +69,7 @@
     <style>
         body {
             background-color: #F5F6F8;
-            color: #111827;
+            color: #111827; /* Solid Black */
             font-family: 'Inter', sans-serif;
             -webkit-font-smoothing: antialiased;
         }
@@ -111,6 +111,10 @@
         .selection-brand::selection {
             background-color: #6C4DFF;
             color: #ffffff;
+        }
+        
+        input, textarea, select {
+            color: #111827 !important; /* Force input text to be visible */
         }
     </style>
 <script type="importmap">

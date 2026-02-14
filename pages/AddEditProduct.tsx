@@ -177,48 +177,48 @@ const AddEditProduct: React.FC = () => {
 
   if (initialLoading) {
     return (
-        <div className="min-h-screen flex items-center justify-center bg-brand-gray">
-            <Loader2 className="animate-spin text-brand-black" size={40} />
+        <div className="min-h-screen flex items-center justify-center bg-brand-bg">
+            <Loader2 className="animate-spin text-brand-primary" size={40} />
         </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-12 pb-24 space-y-8 bg-brand-gray min-h-screen">
-      <button onClick={() => navigate(-1)} className="flex items-center space-x-2 text-gray-500 hover:text-brand-black transition-colors">
+    <div className="max-w-4xl mx-auto px-4 py-12 pb-24 space-y-8 bg-brand-bg min-h-screen">
+      <button onClick={() => navigate(-1)} className="flex items-center space-x-2 text-brand-secondary hover:text-brand-primary transition-colors">
         <ArrowLeft size={20} />
         <span>Go Back</span>
       </button>
 
-      <div className="bg-white border border-gray-100 p-8 md:p-12 rounded-3xl shadow-soft overflow-hidden relative">
-        <div className="absolute top-0 right-0 p-8 opacity-5 text-brand-black"><Save size={120}/></div>
+      <div className="bg-white border border-brand-border p-8 md:p-12 rounded-3xl shadow-soft overflow-hidden relative">
+        <div className="absolute top-0 right-0 p-8 opacity-5 text-brand-primary"><Save size={120}/></div>
         
         <div className="mb-10">
-          <h1 className="text-3xl font-heading font-bold text-brand-black">{isEditMode ? 'Edit Product' : 'Add New Item'}</h1>
-          <p className="text-gray-500">{isEditMode ? 'Update product details and manage images.' : 'Curate a new piece for your collection.'}</p>
+          <h1 className="text-3xl font-heading font-bold text-brand-primary">{isEditMode ? 'Edit Product' : 'Add New Item'}</h1>
+          <p className="text-brand-secondary">{isEditMode ? 'Update product details and manage images.' : 'Curate a new piece for your collection.'}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-6">
             <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-widest text-gray-400 px-1">Product Name</label>
-              <input required name="name" value={formData.name} onChange={handleChange} placeholder="e.g. Classic Trench Coat" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-5 py-4 text-brand-black focus:border-brand-blue outline-none transition-all"/>
+              <label className="text-xs font-bold uppercase tracking-widest text-brand-secondary px-1">Product Name</label>
+              <input required name="name" value={formData.name} onChange={handleChange} placeholder="e.g. Classic Trench Coat" className="w-full bg-brand-bg border border-brand-border rounded-xl px-5 py-4 text-brand-primary focus:border-brand-accent outline-none transition-all placeholder:text-gray-400"/>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-gray-400 px-1">Price (BDT ৳)</label>
-                <input required type="number" name="price" value={formData.price} onChange={handleChange} placeholder="1299" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-5 py-4 text-brand-black focus:border-brand-blue outline-none transition-all"/>
+                <label className="text-xs font-bold uppercase tracking-widest text-brand-secondary px-1">Price (BDT ৳)</label>
+                <input required type="number" name="price" value={formData.price} onChange={handleChange} placeholder="1299" className="w-full bg-brand-bg border border-brand-border rounded-xl px-5 py-4 text-brand-primary focus:border-brand-accent outline-none transition-all placeholder:text-gray-400"/>
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-gray-400 px-1">Stock</label>
-                <input required type="number" name="stock" value={formData.stock} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-5 py-4 text-brand-black focus:border-brand-blue outline-none transition-all"/>
+                <label className="text-xs font-bold uppercase tracking-widest text-brand-secondary px-1">Stock</label>
+                <input required type="number" name="stock" value={formData.stock} onChange={handleChange} className="w-full bg-brand-bg border border-brand-border rounded-xl px-5 py-4 text-brand-primary focus:border-brand-accent outline-none transition-all placeholder:text-gray-400"/>
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-widest text-gray-400 px-1">Category</label>
-              <select name="category" value={formData.category} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-5 py-4 text-brand-black focus:border-brand-blue outline-none transition-all">
+              <label className="text-xs font-bold uppercase tracking-widest text-brand-secondary px-1">Category</label>
+              <select name="category" value={formData.category} onChange={handleChange} className="w-full bg-brand-bg border border-brand-border rounded-xl px-5 py-4 text-brand-primary focus:border-brand-accent outline-none transition-all appearance-none">
                 {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
@@ -226,14 +226,14 @@ const AddEditProduct: React.FC = () => {
 
           <div className="space-y-6">
             <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-widest text-gray-400 px-1">
+              <label className="text-xs font-bold uppercase tracking-widest text-brand-secondary px-1">
                 Product Images ({existingImages.length + selectedFiles.length}/6)
               </label>
               
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                 {/* Existing Images from DB */}
                 {existingImages.map((url, idx) => (
-                  <div key={`exist-${idx}`} className="relative aspect-square rounded-xl overflow-hidden group border border-gray-100 bg-gray-50">
+                  <div key={`exist-${idx}`} className="relative aspect-square rounded-xl overflow-hidden group border border-brand-border bg-gray-50">
                     <img src={url} alt={`Existing ${idx}`} className="w-full h-full object-cover" />
                     <button 
                       type="button"
@@ -251,13 +251,13 @@ const AddEditProduct: React.FC = () => {
 
                 {/* New Previews */}
                 {previews.map((previewUrl, idx) => (
-                  <div key={`new-${idx}`} className="relative aspect-square rounded-xl overflow-hidden group border border-gray-100 bg-gray-50">
+                  <div key={`new-${idx}`} className="relative aspect-square rounded-xl overflow-hidden group border border-brand-border bg-gray-50">
                     <img src={previewUrl} alt={`New ${idx}`} className="w-full h-full object-cover" />
                     <button 
                       type="button"
                       onClick={() => removeNewImage(idx)}
                       disabled={loading}
-                      className="absolute top-2 right-2 bg-white text-gray-500 p-1.5 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500"
+                      className="absolute top-2 right-2 bg-white text-gray-600 p-1.5 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500"
                     >
                       <X size={16} />
                     </button>
@@ -269,7 +269,7 @@ const AddEditProduct: React.FC = () => {
 
                 {/* Upload Button */}
                 {(existingImages.length + selectedFiles.length) < 6 && (
-                  <div className={`relative aspect-square bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl transition-colors flex flex-col items-center justify-center cursor-pointer group ${loading ? 'opacity-50 pointer-events-none' : 'hover:border-brand-blue/50'}`}>
+                  <div className={`relative aspect-square bg-brand-bg border-2 border-dashed border-brand-border rounded-xl transition-colors flex flex-col items-center justify-center cursor-pointer group ${loading ? 'opacity-50 pointer-events-none' : 'hover:border-brand-accent'}`}>
                     <input 
                       type="file" 
                       multiple
@@ -278,32 +278,32 @@ const AddEditProduct: React.FC = () => {
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                       disabled={loading}
                     />
-                    <div className="p-3 bg-white rounded-full mb-2 group-hover:scale-110 transition-transform shadow-sm">
-                       <Upload size={20} className="text-gray-400 group-hover:text-brand-blue" />
+                    <div className="p-3 bg-white rounded-full mb-2 group-hover:scale-110 transition-transform shadow-sm border border-brand-border">
+                       <Upload size={20} className="text-brand-secondary group-hover:text-brand-accent" />
                     </div>
-                    <p className="text-xs text-gray-500 font-medium">Add Images</p>
+                    <p className="text-xs text-brand-secondary font-medium font-sans">Add Images</p>
                   </div>
                 )}
               </div>
-              <p className="text-[10px] text-gray-400 pt-1">* Max size 5MB per image.</p>
+              <p className="text-[10px] text-brand-muted pt-1">* Max size 5MB per image.</p>
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-widest text-gray-400 px-1">Description</label>
-              <textarea required rows={4} name="description" value={formData.description} onChange={handleChange} placeholder="Premium silk blend..." className="w-full bg-gray-50 border border-gray-200 rounded-xl px-5 py-4 text-brand-black focus:border-brand-blue outline-none transition-all resize-none"/>
+              <label className="text-xs font-bold uppercase tracking-widest text-brand-secondary px-1">Description</label>
+              <textarea required rows={4} name="description" value={formData.description} onChange={handleChange} placeholder="Premium silk blend..." className="w-full bg-brand-bg border border-brand-border rounded-xl px-5 py-4 text-brand-primary focus:border-brand-accent outline-none transition-all resize-none placeholder:text-gray-400"/>
             </div>
 
             <div className="pt-4">
-              <button disabled={loading} type="submit" className="w-full bg-brand-black hover:bg-brand-blue text-white font-bold py-5 rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center space-x-2 disabled:opacity-70 disabled:cursor-not-allowed">
+              <button disabled={loading} type="submit" className="w-full bg-brand-primary hover:opacity-90 text-white font-bold py-5 rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center space-x-2 disabled:opacity-70 disabled:cursor-not-allowed">
                 {loading ? (
                     <>
                         <Loader2 className="animate-spin" /> 
-                        <span>{isEditMode ? 'SAVING...' : 'UPLOADING...'}</span>
+                        <span>{isEditMode ? 'Saving...' : 'Uploading...'}</span>
                     </>
                 ) : (
                     <>
                         <Save size={20}/> 
-                        <span>{isEditMode ? 'UPDATE PRODUCT' : 'LIST PRODUCT'}</span>
+                        <span>{isEditMode ? 'Update Product' : 'List Product'}</span>
                     </>
                 )}
               </button>
