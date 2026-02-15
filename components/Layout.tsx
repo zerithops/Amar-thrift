@@ -1,4 +1,3 @@
-
 // @ts-nocheck
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
@@ -68,6 +67,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   src="/logo.png" 
                   alt="Amar Thrift" 
                   className="h-9 md:h-11 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+                  width="150"
+                  height="44"
+                  loading="eager"
                 />
               </Link>
             </div>
@@ -237,6 +239,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     src="/logo.png" 
                     alt="Amar Thrift" 
                     className="h-8 md:h-10 w-auto object-contain opacity-90 hover:opacity-100 transition-opacity"
+                    width="140"
+                    height="40"
+                    loading="lazy"
                   />
               </Link>
               <p className="text-brand-secondary text-sm leading-relaxed">
