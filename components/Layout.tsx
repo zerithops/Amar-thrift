@@ -1,3 +1,4 @@
+
 // @ts-nocheck
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
@@ -63,10 +64,11 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               </button>
 
               <Link to="/" className="flex items-center group relative z-10">
-                <span className="text-xl md:text-2xl font-heading font-bold tracking-tight text-brand-primary">
-                  AMAR THRIFT
-                </span>
-                <span className="w-1.5 h-1.5 rounded-full bg-gradient-to-tr from-brand-accent-start to-brand-accent-end ml-1 mt-1 opacity-80"></span>
+                <img 
+                  src="/logo.png" 
+                  alt="Amar Thrift" 
+                  className="h-9 md:h-11 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+                />
               </Link>
             </div>
 
@@ -230,9 +232,12 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-10 mb-16">
             <div className="space-y-4 max-w-sm">
-              <Link to="/" className="text-2xl font-heading font-bold tracking-tight text-brand-primary flex items-center">
-                  AMAR THRIFT
-                  <span className="w-1.5 h-1.5 rounded-full bg-brand-accent ml-1 mt-1"></span>
+              <Link to="/" className="flex items-center">
+                  <img 
+                    src="/logo.png" 
+                    alt="Amar Thrift" 
+                    className="h-8 md:h-10 w-auto object-contain opacity-90 hover:opacity-100 transition-opacity"
+                  />
               </Link>
               <p className="text-brand-secondary text-sm leading-relaxed">
                 Curated premium vintage essentials. Sustainable fashion reimagined for the modern individual.
