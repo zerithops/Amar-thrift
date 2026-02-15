@@ -82,10 +82,8 @@ export const firebaseService = {
     throw new Error("Unexpected upload failure");
   },
 
-  // Extract file path from public URL
   getFilePathFromUrl(url: string): string | null {
     try {
-      // Splits at the bucket name to get the path relative to bucket root
       const parts = url.split('/product-images/');
       if (parts.length < 2) return null;
       return parts[1];
@@ -95,13 +93,11 @@ export const firebaseService = {
   },
 
   async deleteProductImage(productId: string, imageUrl: string): Promise<void> {
-    // 1. Verify Admin Role
     const isAdmin = await this.checkAdmin();
     if (!isAdmin) {
       throw new Error("Unauthorized: Only admins can delete images.");
     }
 
-    // 2. Delete file from Storage
     const filePath = this.getFilePathFromUrl(imageUrl);
     if (filePath) {
       const { error: storageError } = await supabase.storage
@@ -112,12 +108,8 @@ export const firebaseService = {
         console.error("Storage delete error:", storageError);
         throw new Error("Failed to delete image file from storage.");
       }
-    } else {
-        console.warn("Could not extract file path, skipping storage delete", imageUrl);
     }
 
-    // 3. Update Database (Remove URL from array)
-    // First fetch current product to ensure we have latest array
     const { data: product, error: fetchError } = await supabase
         .from('products')
         .select('images')
@@ -149,7 +141,8 @@ export const firebaseService = {
         full_name: orderData.fullName,
         email: orderData.email,
         phone: orderData.phone,
-        city: orderData.city,
+        district: orderData.district,
+        upazila: orderData.upazila,
         address: orderData.address,
         items: orderData.items, 
         delivery_charge: orderData.deliveryCharge,
@@ -189,11 +182,10 @@ export const firebaseService = {
       fullName: o.full_name,
       email: o.email,
       phone: o.phone,
-      city: o.city,
+      district: o.district,
+      upazila: o.upazila,
       address: o.address,
       items: o.items || [], 
-      productName: o.product_name, 
-      price: o.price, 
       deliveryCharge: o.delivery_charge,
       total: o.total,
       status: o.status as OrderStatus,
@@ -218,11 +210,10 @@ export const firebaseService = {
       fullName: data.full_name,
       email: data.email,
       phone: data.phone,
-      city: data.city,
+      district: data.district,
+      upazila: data.upazila,
       address: data.address,
       items: data.items || [],
-      productName: data.product_name || (data.items ? `${data.items.length} items` : 'Unknown'),
-      price: data.price, 
       deliveryCharge: data.delivery_charge,
       total: data.total,
       status: data.status as OrderStatus,
@@ -382,23 +373,20 @@ export const firebaseService = {
   },
 
   async deleteProduct(id: string): Promise<void> {
-    // 1. Fetch images to delete them from storage first
     const product = await this.getProduct(id);
     if (product && product.images) {
         for (const url of product.images) {
             try {
-                // Determine file path
                 const path = this.getFilePathFromUrl(url);
                 if (path) {
                     await supabase.storage.from('product-images').remove([path]);
                 }
             } catch (e) {
-                console.warn(`Failed to delete image ${url} during product deletion`);
+                console.warn(`Failed to delete image ${url}`);
             }
         }
     }
 
-    // 2. Delete row
     const { error } = await supabase.from('products').delete().eq('id', id);
     if (!error) await this.logActivity('DELETE_PRODUCT', `Deleted product ID: ${id}`);
   },

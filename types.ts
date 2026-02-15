@@ -38,11 +38,13 @@ export interface Order {
   fullName: string;
   email: string;
   phone: string;
-  city: 'Dhaka' | 'Outside Dhaka';
+  district: string;
+  upazila: string;
   address: string;
-  items: CartItem[]; // Changed from single productName to array of items
+  items: CartItem[];
   
   // Legacy fields
+  city?: string;
   productName?: string;
   price?: number;
 

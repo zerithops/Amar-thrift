@@ -1,3 +1,4 @@
+
 // @ts-nocheck
 import React from 'react';
 import { useNavigate, Link } from 'react-router-dom';
@@ -170,26 +171,26 @@ const Dashboard: React.FC = () => {
                     <div className="text-brand-secondary text-xs space-y-1">
                       <p className="flex items-center space-x-2"><Mail size={12}/> <span>{order.email}</span></p>
                       <p className="flex items-center space-x-2"><Phone size={12}/> <span>{order.phone}</span></p>
-                      <p className="flex items-center space-x-2"><MapPin size={12}/> <span>{order.city}</span></p>
+                      <p className="flex items-center space-x-2"><MapPin size={12}/> <span className="truncate">{order.district}, {order.upazila}</span></p>
                     </div>
                   </div>
 
                   {/* Product Info */}
                   <div className="lg:col-span-3 space-y-2">
-                    <p className="text-[10px] font-bold text-brand-accent uppercase tracking-widest">Items ({order.items?.length || 1})</p>
+                    <p className="text-[10px] font-bold text-brand-accent uppercase tracking-widest">Items ({order.items?.length || 0})</p>
                     {order.items && order.items.length > 0 ? (
                         <div className="space-y-1">
                             {order.items.map((item, idx) => (
-                                <div key={idx} className="flex justify-between text-sm">
+                                <div key={idx} className="flex justify-between text-xs">
                                     <span className="text-brand-primary font-medium">{item.quantity}x {item.name}</span>
-                                    <span className="text-brand-secondary">৳{item.price}</span>
+                                    <span className="text-brand-muted">৳{item.price}</span>
                                 </div>
                             ))}
                         </div>
                     ) : (
-                        <p className="text-lg font-bold text-brand-primary">{(order as any).productName}</p>
+                        <p className="text-sm font-bold text-brand-primary">No items listed</p>
                     )}
-                    <p className="text-brand-secondary text-xs text-ellipsis overflow-hidden whitespace-nowrap pt-2">{order.address}</p>
+                    <p className="text-brand-secondary text-[10px] leading-relaxed pt-2 line-clamp-2 italic">{order.address}</p>
                   </div>
 
                   {/* Financials - Editable */}
@@ -221,7 +222,7 @@ const Dashboard: React.FC = () => {
                       <div className="space-y-1">
                          <div className="flex justify-between text-xs text-brand-secondary"><span>Delivery:</span> <span>৳{order.deliveryCharge || 0}</span></div>
                          <div className="flex justify-between text-sm font-bold text-brand-primary border-t border-brand-border pt-1"><span>Total:</span> <span>৳{order.total}</span></div>
-                         <div className={`text-xs font-bold uppercase mt-1 ${getPaymentColor(order.paymentStatus || PaymentStatus.PENDING)}`}>
+                         <div className={`text-[10px] font-bold uppercase mt-1 ${getPaymentColor(order.paymentStatus || PaymentStatus.PENDING)}`}>
                            {order.paymentStatus || 'Pending'}
                          </div>
                       </div>
@@ -263,7 +264,6 @@ const Dashboard: React.FC = () => {
         )}
       </div>
 
-      {/* Activity Log Section */}
       <div className="space-y-6 pt-6 border-t border-brand-border">
         <h2 className="text-2xl font-heading font-bold text-brand-primary">Activity Log</h2>
         <div className="bg-white border border-brand-border rounded-2xl p-6 shadow-soft max-h-96 overflow-y-auto custom-scrollbar">
