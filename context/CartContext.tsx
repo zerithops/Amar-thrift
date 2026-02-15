@@ -27,23 +27,29 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const addToCart = (product: Product) => {
     setItems(prev => {
       const existing = prev.find(item => item.productId === product.id);
+      
+      const discountedPrice = product.discountPercentage 
+        ? product.price - (product.price * product.discountPercentage / 100)
+        : product.price;
+
       if (existing) {
         return prev.map(item => 
           item.productId === product.id 
-            ? { ...item, quantity: item.quantity + 1 }
+            ? { ...item, quantity: item.quantity + 1, price: discountedPrice, originalPrice: product.price }
             : item
         );
       }
       return [...prev, {
         productId: product.id!,
         name: product.name,
-        price: product.price,
+        price: discountedPrice,
+        originalPrice: product.price,
         image: product.images?.[0] || '',
         quantity: 1,
-        category: product.category
+        category: product.category,
+        isFreeDelivery: product.isFreeDelivery
       }];
     });
-    // Optional: Add toast notification here
   };
 
   const removeFromCart = (productId: string) => {

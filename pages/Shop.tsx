@@ -1,12 +1,12 @@
+
 // @ts-nocheck
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ShoppingBag, Filter, X, Loader2, ArrowRight } from 'lucide-react';
+import { ShoppingBag, Filter, X, Loader2, ArrowRight, Truck } from 'lucide-react';
 import { firebaseService } from '../services/firebase';
 import { Product } from '../types';
 
-// Premium Skeleton Component
 const ProductSkeleton = () => (
   <div className="rounded-2xl overflow-hidden bg-white shadow-card border border-transparent">
     <div className="aspect-[4/5] bg-gray-100 relative overflow-hidden">
@@ -29,7 +29,6 @@ const Shop: React.FC = () => {
   const [page, setPage] = React.useState(1);
   const [hasMore, setHasMore] = React.useState(true);
   
-  // Filter State
   const [isFilterOpen, setIsFilterOpen] = React.useState(false);
   const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null);
   
@@ -39,8 +38,6 @@ const Shop: React.FC = () => {
   const PRODUCTS_PER_PAGE = 26;
   const CATEGORIES = ['T-Shirt', 'Shirt', 'Hoodie', 'Jacket', 'Pants', 'Sweater', 'Accessories'];
 
-  // --- Logic ---
-  
   const getCategoryFromSlug = (slug?: string) => {
     if (!slug) return null;
     const map: Record<string, string> = {
@@ -112,11 +109,15 @@ const Shop: React.FC = () => {
     if (categoryId) navigate('/shop'); 
   };
 
-  const formatPrice = (price: number) => `৳ ${price.toLocaleString()}`;
+  const formatPrice = (price: number) => `৳ ${Math.round(price).toLocaleString()}`;
+  
+  const getDiscountedPrice = (product: Product) => {
+    if (!product.discountPercentage) return product.price;
+    return product.price - (product.price * product.discountPercentage / 100);
+  };
 
   return (
     <div className="bg-brand-bg min-h-screen pb-32">
-      {/* Sticky Filter Header */}
       <div className="sticky top-16 md:top-20 z-30 bg-brand-bg/95 backdrop-blur-md py-4 border-b border-brand-border/60 shadow-sm transition-all">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
             <div>
@@ -140,7 +141,6 @@ const Shop: React.FC = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-        {/* Premium Grid: 2 Cols Mobile (20px gap), 3 Tablet, 4 Desktop */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 md:gap-8 lg:gap-10">
             
             {loading && Array.from({ length: 8 }).map((_, i) => <ProductSkeleton key={i} />)}
@@ -155,7 +155,6 @@ const Shop: React.FC = () => {
                     onClick={() => navigate(`/product/${product.id}`)}
                     className="group cursor-pointer flex flex-col"
                 >
-                    {/* Card Image */}
                     <div className="relative aspect-[4/5] bg-white rounded-2xl overflow-hidden shadow-soft group-hover:shadow-hover transition-all duration-500 mb-4 transform group-hover:-translate-y-1">
                         {product.images?.[0] ? (
                             <img 
@@ -168,14 +167,25 @@ const Shop: React.FC = () => {
                             <div className="w-full h-full flex items-center justify-center text-gray-300 bg-gray-50">No Image</div>
                         )}
                         
-                        {/* New Tag */}
-                        {index < 2 && !selectedCategory && !categoryId && (
+                        <div className="absolute top-3 left-3 flex flex-col gap-1.5">
+                          {product.discountPercentage > 0 && (
+                            <div className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider shadow-lg">
+                              -{product.discountPercentage}%
+                            </div>
+                          )}
+                          {product.isFreeDelivery && (
+                            <div className="bg-brand-primary/90 backdrop-blur text-white text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider shadow-lg flex items-center gap-1">
+                              <Truck size={10}/> Free Delivery
+                            </div>
+                          )}
+                        </div>
+
+                        {index < 2 && !selectedCategory && !categoryId && product.discountPercentage === 0 && (
                             <div className="absolute top-3 left-3 bg-brand-tag-bg/90 backdrop-blur text-brand-tag-text text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider">
                                 New
                             </div>
                         )}
 
-                        {/* Hover Action */}
                         <div className="absolute bottom-4 right-4 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
                              <div className="w-10 h-10 bg-white text-brand-primary rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
                                 <ShoppingBag size={18} strokeWidth={2} />
@@ -183,7 +193,6 @@ const Shop: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Card Content */}
                     <div className="flex flex-col px-1">
                         <div className="flex justify-between items-start">
                              <div className="flex-1 pr-2">
@@ -192,16 +201,28 @@ const Shop: React.FC = () => {
                                 </h3>
                                 <p className="text-[10px] font-bold text-brand-muted uppercase tracking-widest mt-1.5">{product.category}</p>
                              </div>
-                             <span className="text-sm md:text-base font-bold text-brand-primary whitespace-nowrap">
-                                {formatPrice(product.price)}
-                             </span>
+                             <div className="flex flex-col items-end">
+                               {product.discountPercentage > 0 ? (
+                                 <>
+                                   <span className="text-sm md:text-base font-bold text-brand-primary whitespace-nowrap">
+                                      {formatPrice(getDiscountedPrice(product))}
+                                   </span>
+                                   <span className="text-[10px] text-brand-muted line-through">
+                                      {formatPrice(product.price)}
+                                   </span>
+                                 </>
+                               ) : (
+                                 <span className="text-sm md:text-base font-bold text-brand-primary whitespace-nowrap">
+                                    {formatPrice(product.price)}
+                                 </span>
+                               )}
+                             </div>
                         </div>
                     </div>
                 </motion.div>
             ))}
         </div>
         
-        {/* Empty State */}
         {!loading && products.length === 0 && (
             <div className="py-32 text-center">
                 <ShoppingBag size={56} className="mx-auto text-gray-200 mb-6" strokeWidth={1}/>
@@ -217,7 +238,6 @@ const Shop: React.FC = () => {
             </div>
         )}
 
-        {/* Load More Button */}
         {hasMore && !loading && !selectedCategory && !categoryId && (
             <div className="mt-20 text-center">
                 <button 
@@ -235,7 +255,6 @@ const Shop: React.FC = () => {
         )}
       </div>
 
-      {/* Premium Bottom Sheet Filter */}
       <AnimatePresence>
         {isFilterOpen && (
             <>
@@ -253,7 +272,6 @@ const Shop: React.FC = () => {
                     transition={{ type: "spring", damping: 30, stiffness: 300 }}
                     className="fixed bottom-0 left-0 right-0 bg-white z-50 rounded-t-[2rem] shadow-2xl max-h-[85vh] overflow-hidden flex flex-col"
                 >
-                    {/* Handle */}
                     <div className="w-full flex justify-center pt-4 pb-2 bg-white" onClick={() => setIsFilterOpen(false)}>
                         <div className="w-12 h-1.5 bg-gray-200 rounded-full" />
                     </div>
@@ -266,7 +284,6 @@ const Shop: React.FC = () => {
                             </button>
                         </div>
 
-                        {/* Category Section */}
                         <div className="space-y-5">
                             <h3 className="text-xs font-bold uppercase tracking-widest text-brand-secondary">Category</h3>
                             <div className="flex flex-wrap gap-3">
@@ -297,7 +314,6 @@ const Shop: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Footer Actions */}
                     <div className="p-6 border-t border-brand-border bg-white safe-area-pb">
                         <button 
                             onClick={() => setIsFilterOpen(false)}

@@ -1,8 +1,9 @@
+
 // @ts-nocheck
 import React from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, Loader2, ShoppingBag } from 'lucide-react';
+import { ArrowRight, Loader2, ShoppingBag, Truck } from 'lucide-react';
 import { firebaseService } from '../services/firebase';
 import { Product } from '../types';
 
@@ -14,14 +15,18 @@ const Home: React.FC = () => {
   const y1 = useTransform(scrollY, [0, 500], [0, 200]);
 
   React.useEffect(() => {
-    // Only fetch first 3 products for featured section
     firebaseService.getProducts().then(data => {
       setProducts(data.slice(0, 3));
       setLoading(false);
     });
   }, []);
 
-  const formatPrice = (price: number) => `৳ ${price.toLocaleString()}`;
+  const formatPrice = (price: number) => `৳ ${Math.round(price).toLocaleString()}`;
+
+  const getDiscountedPrice = (product: Product) => {
+    if (!product.discountPercentage) return product.price;
+    return product.price - (product.price * product.discountPercentage / 100);
+  };
 
   return (
     <div className="bg-brand-bg min-h-screen overflow-hidden">
@@ -34,7 +39,6 @@ const Home: React.FC = () => {
             alt="Fashion Background" 
             className="w-full h-full object-cover scale-110"
           />
-          {/* Gradients for depth and readability */}
           <div className="absolute inset-0 bg-black/20" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
         </motion.div>
@@ -119,7 +123,6 @@ const Home: React.FC = () => {
                 onClick={() => navigate(`/product/${product.id}`)}
                 className="group cursor-pointer"
               >
-                {/* Image Container */}
                 <div className="relative aspect-[4/5] overflow-hidden bg-white rounded-2xl shadow-soft group-hover:shadow-hover transition-all duration-500 mb-6">
                   {product.images && product.images.length > 0 ? (
                     <img 
@@ -131,17 +134,38 @@ const Home: React.FC = () => {
                     <div className="w-full h-full flex items-center justify-center text-gray-400 bg-gray-50">No Image</div>
                   )}
                   
-                  {/* Floating Badge */}
-                  <div className="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider text-brand-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform -translate-y-2 group-hover:translate-y-0">
+                  {/* Overlay Badges */}
+                  <div className="absolute top-4 left-4 flex flex-col gap-2">
+                    {product.discountPercentage > 0 && (
+                      <div className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider shadow-lg">
+                        -{product.discountPercentage}%
+                      </div>
+                    )}
+                    {product.isFreeDelivery && (
+                      <div className="bg-brand-primary/90 backdrop-blur text-white text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider shadow-lg flex items-center gap-1">
+                        <Truck size={10}/> Free Delivery
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider text-brand-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform -translate-y-2 group-hover:translate-y-0">
                     Quick View
                   </div>
                 </div>
                 
-                {/* Product Info */}
                 <div className="space-y-1 px-1">
                    <div className="flex justify-between items-start">
                       <h3 className="text-base font-medium text-brand-primary group-hover:text-brand-accent transition-colors line-clamp-1">{product.name}</h3>
-                      <span className="text-base font-bold text-brand-primary whitespace-nowrap ml-4">{formatPrice(product.price)}</span>
+                      <div className="flex flex-col items-end">
+                        {product.discountPercentage > 0 ? (
+                          <>
+                            <span className="text-brand-primary font-bold">{formatPrice(getDiscountedPrice(product))}</span>
+                            <span className="text-[10px] text-brand-muted line-through">{formatPrice(product.price)}</span>
+                          </>
+                        ) : (
+                          <span className="text-brand-primary font-bold">{formatPrice(product.price)}</span>
+                        )}
+                      </div>
                    </div>
                    <p className="text-xs text-brand-secondary font-medium uppercase tracking-wide">{product.category}</p>
                 </div>

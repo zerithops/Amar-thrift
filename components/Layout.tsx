@@ -63,14 +63,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               </button>
 
               <Link to="/" className="flex items-center group relative z-10">
-                <img 
-                  src="/logo.png" 
-                  alt="Amar Thrift" 
-                  className="h-9 md:h-11 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
-                  width="150"
-                  height="44"
-                  loading="eager"
-                />
+                <span className="text-2xl font-heading font-bold tracking-tighter text-brand-primary transition-transform duration-300 group-hover:scale-105">
+                  AMAR <span className="text-brand-accent">THRIFT</span>
+                </span>
               </Link>
             </div>
 
@@ -235,14 +230,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-10 mb-16">
             <div className="space-y-4 max-w-sm">
               <Link to="/" className="flex items-center">
-                  <img 
-                    src="/logo.png" 
-                    alt="Amar Thrift" 
-                    className="h-8 md:h-10 w-auto object-contain opacity-90 hover:opacity-100 transition-opacity"
-                    width="140"
-                    height="40"
-                    loading="lazy"
-                  />
+                  <span className="text-xl md:text-2xl font-heading font-bold tracking-tighter text-brand-primary">
+                    AMAR <span className="text-brand-accent">THRIFT</span>
+                  </span>
               </Link>
               <p className="text-brand-secondary text-sm leading-relaxed">
                 Curated premium vintage essentials. Sustainable fashion reimagined for the modern individual.

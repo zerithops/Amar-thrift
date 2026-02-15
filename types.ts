@@ -25,9 +25,11 @@ export interface CartItem {
   productId: string;
   name: string;
   price: number;
+  originalPrice: number;
   image: string;
   quantity: number;
   category: string;
+  isFreeDelivery?: boolean;
 }
 
 export interface Order {
@@ -62,6 +64,8 @@ export interface Product {
   category: Category;
   stock: number;
   createdAt: number;
+  discountPercentage?: number;
+  isFreeDelivery?: boolean;
 }
 
 export interface Review {

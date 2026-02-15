@@ -1,8 +1,9 @@
+
 // @ts-nocheck
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Loader2, ShoppingBag, ArrowRight, Check, ShieldCheck, Truck, Star } from 'lucide-react';
+import { ArrowLeft, Loader2, ShoppingBag, ArrowRight, Check, ShieldCheck, Truck, Star, Percent } from 'lucide-react';
 import { firebaseService } from '../services/firebase';
 import { Product } from '../types';
 import { useCart } from '../context/CartContext';
@@ -34,7 +35,13 @@ const ProductDetail: React.FC = () => {
     }
   };
 
-  const formatPrice = (price: number) => `৳ ${price.toLocaleString()}`;
+  const formatPrice = (price: number) => `৳ ${Math.round(price).toLocaleString()}`;
+  
+  const getDiscountedPrice = (product: Product) => {
+    if (!product.discountPercentage) return product.price;
+    return product.price - (product.price * product.discountPercentage / 100);
+  };
+
   const INSTAGRAM_LINK = "https://www.instagram.com/amar_thrift_/";
 
   if (loading) {
@@ -95,6 +102,12 @@ const ProductDetail: React.FC = () => {
                     Sold Out
                   </div>
                 )}
+
+                {product.discountPercentage > 0 && (
+                  <div className="absolute top-6 right-6 bg-red-500 text-white text-xs font-bold px-4 py-2 rounded-lg uppercase tracking-widest shadow-lg flex items-center gap-1">
+                    <Percent size={14}/> {product.discountPercentage}% OFF
+                  </div>
+                )}
              </motion.div>
              
              {/* Thumbnails */}
@@ -119,15 +132,31 @@ const ProductDetail: React.FC = () => {
           <div className="lg:col-span-5 flex flex-col lg:py-4">
             <div className="mb-auto">
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-                  <span className="inline-block px-3 py-1 rounded-md bg-brand-tag-bg text-brand-tag-text text-[10px] font-bold uppercase tracking-widest mb-4">
-                      {product.category}
-                  </span>
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="inline-block px-3 py-1 rounded-md bg-brand-tag-bg text-brand-tag-text text-[10px] font-bold uppercase tracking-widest">
+                        {product.category}
+                    </span>
+                    {product.isFreeDelivery && (
+                      <span className="inline-block px-3 py-1 rounded-md bg-green-50 text-green-600 text-[10px] font-bold uppercase tracking-widest flex items-center gap-1">
+                          <Truck size={12}/> Free Delivery
+                      </span>
+                    )}
+                  </div>
                   <h1 className="text-3xl md:text-5xl font-heading font-bold text-brand-primary mb-6 leading-[1.1]">
                     {product.name}
                   </h1>
                   
                   <div className="flex items-center space-x-6 mb-10">
-                    <span className="text-3xl font-medium text-brand-primary">{formatPrice(product.price)}</span>
+                    <div className="flex flex-col">
+                      {product.discountPercentage > 0 ? (
+                        <>
+                          <span className="text-3xl font-medium text-brand-primary">{formatPrice(getDiscountedPrice(product))}</span>
+                          <span className="text-sm text-brand-muted line-through">{formatPrice(product.price)}</span>
+                        </>
+                      ) : (
+                        <span className="text-3xl font-medium text-brand-primary">{formatPrice(product.price)}</span>
+                      )}
+                    </div>
                     <div className="h-8 w-[1px] bg-brand-border"></div>
                     <div className="flex items-center space-x-1">
                         <Star size={14} className="text-brand-gold fill-current" />
@@ -145,10 +174,12 @@ const ProductDetail: React.FC = () => {
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                    <div className="bg-white p-5 rounded-2xl border border-brand-border/50 flex items-start space-x-4">
-                      <div className="p-2 bg-brand-bg rounded-lg text-brand-primary"><Truck size={20} strokeWidth={1.5} /></div>
+                      <div className="p-2 bg-brand-bg rounded-lg text-brand-primary">
+                        {product.isFreeDelivery ? <Percent size={20} strokeWidth={1.5} className="text-green-600"/> : <Truck size={20} strokeWidth={1.5} />}
+                      </div>
                       <div>
-                        <p className="text-xs font-bold uppercase text-brand-primary mb-1">Fast Delivery</p>
-                        <p className="text-xs text-brand-secondary leading-relaxed">2-3 days in Dhaka</p>
+                        <p className="text-xs font-bold uppercase text-brand-primary mb-1">{product.isFreeDelivery ? 'Zero Shipping' : 'Fast Delivery'}</p>
+                        <p className="text-xs text-brand-secondary leading-relaxed">{product.isFreeDelivery ? 'Applied for this item' : '2-3 days in Dhaka'}</p>
                       </div>
                    </div>
                    <div className="bg-white p-5 rounded-2xl border border-brand-border/50 flex items-start space-x-4">
@@ -162,7 +193,6 @@ const ProductDetail: React.FC = () => {
               </motion.div>
             </div>
 
-            {/* Sticky Mobile Actions / Static Desktop Actions */}
             <motion.div 
                 initial={{ opacity: 0, y: 20 }} 
                 animate={{ opacity: 1, y: 0 }} 

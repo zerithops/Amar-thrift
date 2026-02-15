@@ -1,8 +1,9 @@
+
 // @ts-nocheck
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { Trash2, Plus, Minus, ArrowRight, ShoppingBag } from 'lucide-react';
+import { Trash2, Plus, Minus, ArrowRight, ShoppingBag, Truck } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 
 const Cart: React.FC = () => {
@@ -23,13 +24,14 @@ const Cart: React.FC = () => {
     );
   }
 
+  const formatPrice = (price: number) => `৳ ${Math.round(price).toLocaleString()}`;
+
   return (
     <div className="bg-brand-bg min-h-screen py-20">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
-        <h1 className="text-4xl font-heading font-bold text-brand-primary mb-12">Shopping Cart</h1>
+        <h1 className="text-4xl font-heading font-bold text-brand-primary mb-12">Shopping Bag</h1>
         
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
-          {/* Cart Items */}
           <div className="lg:col-span-8 space-y-6">
             {items.map((item) => (
               <motion.div 
@@ -45,9 +47,21 @@ const Cart: React.FC = () => {
                 </div>
                 
                 <div className="flex-grow text-center sm:text-left">
-                  <p className="text-xs font-bold text-brand-muted uppercase tracking-wider mb-1">{item.category}</p>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-1">
+                    <p className="text-[10px] font-bold text-brand-muted uppercase tracking-wider">{item.category}</p>
+                    {item.isFreeDelivery && (
+                      <span className="text-[10px] font-bold text-green-600 uppercase flex items-center gap-1">
+                        <Truck size={12}/> Free Delivery
+                      </span>
+                    )}
+                  </div>
                   <h3 className="font-heading font-bold text-brand-primary text-lg">{item.name}</h3>
-                  <p className="text-brand-secondary text-sm mt-1">৳ {item.price.toLocaleString()}</p>
+                  <div className="flex items-center gap-2 justify-center sm:justify-start mt-1">
+                    <p className="text-brand-primary font-bold">{formatPrice(item.price)}</p>
+                    {item.originalPrice > item.price && (
+                      <p className="text-brand-muted text-xs line-through">{formatPrice(item.originalPrice)}</p>
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex items-center space-x-4 bg-brand-bg rounded-lg p-1">
@@ -67,7 +81,7 @@ const Cart: React.FC = () => {
                 </div>
 
                 <div className="text-right min-w-[100px]">
-                  <p className="font-bold text-brand-primary text-lg">৳ {(item.price * item.quantity).toLocaleString()}</p>
+                  <p className="font-bold text-brand-primary text-lg">{formatPrice(item.price * item.quantity)}</p>
                 </div>
 
                 <button 
@@ -80,21 +94,20 @@ const Cart: React.FC = () => {
             ))}
           </div>
 
-          {/* Summary */}
           <div className="lg:col-span-4">
             <div className="bg-brand-card p-8 rounded-3xl shadow-soft border border-brand-border sticky top-28">
               <h3 className="text-xl font-heading font-bold text-brand-primary mb-8">Order Summary</h3>
               <div className="space-y-4 mb-8">
                 <div className="flex justify-between text-brand-secondary">
                   <span>Subtotal</span>
-                  <span className="font-bold text-brand-primary">৳ {cartTotal.toLocaleString()}</span>
+                  <span className="font-bold text-brand-primary">{formatPrice(cartTotal)}</span>
                 </div>
                 <div className="flex justify-between text-brand-muted text-xs">
                   <span>Delivery charges calculated at checkout</span>
                 </div>
                 <div className="pt-6 border-t border-brand-border flex justify-between items-end">
-                  <span className="font-bold text-lg text-brand-primary">Total</span>
-                  <span className="text-3xl font-heading font-bold text-brand-accent">৳ {cartTotal.toLocaleString()}</span>
+                  <span className="font-bold text-lg text-brand-primary">Estimated Total</span>
+                  <span className="text-3xl font-heading font-bold text-brand-accent">{formatPrice(cartTotal)}</span>
                 </div>
               </div>
               

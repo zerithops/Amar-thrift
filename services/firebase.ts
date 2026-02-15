@@ -263,7 +263,9 @@ export const firebaseService = {
       description: p.description,
       category: p.category,
       stock: p.stock,
-      createdAt: this.toTimestamp(p.created_at)
+      createdAt: this.toTimestamp(p.created_at),
+      discountPercentage: p.discount_percentage,
+      isFreeDelivery: p.is_free_delivery
     }));
   },
 
@@ -287,7 +289,9 @@ export const firebaseService = {
       description: p.description,
       category: p.category,
       stock: p.stock,
-      createdAt: this.toTimestamp(p.created_at)
+      createdAt: this.toTimestamp(p.created_at),
+      discountPercentage: p.discount_percentage,
+      isFreeDelivery: p.is_free_delivery
     }));
   },
   
@@ -308,7 +312,9 @@ export const firebaseService = {
       description: p.description,
       category: p.category,
       stock: p.stock,
-      createdAt: this.toTimestamp(p.created_at)
+      createdAt: this.toTimestamp(p.created_at),
+      discountPercentage: p.discount_percentage,
+      isFreeDelivery: p.is_free_delivery
     }));
   },
 
@@ -329,7 +335,9 @@ export const firebaseService = {
       description: data.description,
       category: data.category,
       stock: data.stock,
-      createdAt: this.toTimestamp(data.created_at)
+      createdAt: this.toTimestamp(data.created_at),
+      discountPercentage: data.discount_percentage,
+      isFreeDelivery: data.is_free_delivery
     };
   },
 
@@ -342,7 +350,9 @@ export const firebaseService = {
         description: product.description,
         category: product.category,
         stock: product.stock,
-        images: product.images 
+        images: product.images,
+        discount_percentage: product.discountPercentage,
+        is_free_delivery: product.isFreeDelivery
       }])
       .select()
       .single();
@@ -361,7 +371,9 @@ export const firebaseService = {
         description: product.description,
         category: product.category,
         stock: product.stock,
-        images: product.images
+        images: product.images,
+        discount_percentage: product.discountPercentage,
+        is_free_delivery: product.isFreeDelivery
       })
       .eq('id', id);
 

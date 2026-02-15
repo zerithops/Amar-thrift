@@ -1,11 +1,13 @@
+
 // @ts-nocheck
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Save, Loader2, Upload, X, Trash2 } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, Upload, X, Trash2, Percent, Truck } from 'lucide-react';
 import { firebaseService } from '../services/firebase';
 import { Category } from '../types';
 
 const CATEGORIES: Category[] = ['T-Shirt', 'Shirt', 'Hoodie', 'Jacket', 'Pants', 'Sweater', 'Accessories'];
+const DISCOUNTS = [0, 10, 15, 20, 30, 40, 50];
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 const AddEditProduct: React.FC = () => {
@@ -22,7 +24,9 @@ const AddEditProduct: React.FC = () => {
     description: '',
     price: '',
     category: 'T-Shirt' as Category,
-    stock: '1'
+    stock: '1',
+    discountPercentage: 0,
+    isFreeDelivery: false
   });
 
   // Existing images (URLs)
@@ -43,7 +47,9 @@ const AddEditProduct: React.FC = () => {
               description: product.description,
               price: product.price.toString(),
               category: product.category,
-              stock: product.stock.toString()
+              stock: product.stock.toString(),
+              discountPercentage: product.discountPercentage || 0,
+              isFreeDelivery: product.isFreeDelivery || false
             });
             setExistingImages(product.images || []);
           }
@@ -60,7 +66,8 @@ const AddEditProduct: React.FC = () => {
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+    setFormData(prev => ({ ...prev, [e.target.name]: value }));
   };
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -99,7 +106,6 @@ const AddEditProduct: React.FC = () => {
     setPreviews(prev => prev.filter((_, i) => i !== index));
   };
 
-  // Securely delete existing image using the service
   const handleDeleteExistingImage = async (imageUrl: string) => {
     if (!id) return;
     if (!confirm("Are you sure you want to permanently delete this image?")) return;
@@ -107,7 +113,6 @@ const AddEditProduct: React.FC = () => {
     try {
       setLoading(true);
       await firebaseService.deleteProductImage(id, imageUrl);
-      // Update local state to reflect change immediately
       setExistingImages(prev => prev.filter(img => img !== imageUrl));
     } catch (error: any) {
       console.error(error);
@@ -130,7 +135,6 @@ const AddEditProduct: React.FC = () => {
     const newImageUrls: string[] = [];
     const errors: string[] = [];
 
-    // 1. Upload Loop
     for (const file of selectedFiles) {
       try {
           const url = await firebaseService.uploadFile(file);
@@ -149,22 +153,19 @@ const AddEditProduct: React.FC = () => {
 
     const finalImages = [...existingImages, ...newImageUrls];
 
-    // 2. Database Action
     try {
+      const productPayload = {
+        ...formData,
+        price: parseFloat(formData.price),
+        stock: parseInt(formData.stock),
+        images: finalImages,
+        discountPercentage: parseInt(formData.discountPercentage)
+      };
+
       if (isEditMode && id) {
-        await firebaseService.updateProduct(id, {
-          ...formData,
-          price: parseFloat(formData.price),
-          stock: parseInt(formData.stock),
-          images: finalImages
-        });
+        await firebaseService.updateProduct(id, productPayload);
       } else {
-        await firebaseService.addProduct({
-          ...formData,
-          price: parseFloat(formData.price),
-          stock: parseInt(formData.stock),
-          images: finalImages
-        });
+        await firebaseService.addProduct(productPayload);
       }
       navigate('/products');
     } catch (err: any) {
@@ -216,11 +217,35 @@ const AddEditProduct: React.FC = () => {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-widest text-brand-secondary px-1">Category</label>
-              <select name="category" value={formData.category} onChange={handleChange} className="w-full bg-brand-bg border border-brand-border rounded-xl px-5 py-4 text-brand-primary focus:border-brand-accent outline-none transition-all appearance-none">
-                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-widest text-brand-secondary px-1 flex items-center gap-1"><Percent size={12}/> Discount</label>
+                <select name="discountPercentage" value={formData.discountPercentage} onChange={handleChange} className="w-full bg-brand-bg border border-brand-border rounded-xl px-5 py-4 text-brand-primary focus:border-brand-accent outline-none transition-all appearance-none">
+                  {DISCOUNTS.map(d => <option key={d} value={d}>{d === 0 ? 'No Discount' : `${d}% Off`}</option>)}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-widest text-brand-secondary px-1">Category</label>
+                <select name="category" value={formData.category} onChange={handleChange} className="w-full bg-brand-bg border border-brand-border rounded-xl px-5 py-4 text-brand-primary focus:border-brand-accent outline-none transition-all appearance-none">
+                  {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div className="bg-brand-bg border border-brand-border rounded-2xl p-5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white rounded-lg text-brand-accent shadow-sm">
+                  <Truck size={20} />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-brand-primary">Free Delivery</p>
+                  <p className="text-[10px] text-brand-secondary uppercase tracking-wider">Set for this product</p>
+                </div>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" name="isFreeDelivery" checked={formData.isFreeDelivery} onChange={handleChange} className="sr-only peer" />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-accent"></div>
+              </label>
             </div>
           </div>
 
@@ -231,7 +256,6 @@ const AddEditProduct: React.FC = () => {
               </label>
               
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-                {/* Existing Images from DB */}
                 {existingImages.map((url, idx) => (
                   <div key={`exist-${idx}`} className="relative aspect-square rounded-xl overflow-hidden group border border-brand-border bg-gray-50">
                     <img src={url} alt={`Existing ${idx}`} className="w-full h-full object-cover" />
@@ -249,7 +273,6 @@ const AddEditProduct: React.FC = () => {
                   </div>
                 ))}
 
-                {/* New Previews */}
                 {previews.map((previewUrl, idx) => (
                   <div key={`new-${idx}`} className="relative aspect-square rounded-xl overflow-hidden group border border-brand-border bg-gray-50">
                     <img src={previewUrl} alt={`New ${idx}`} className="w-full h-full object-cover" />
@@ -267,7 +290,6 @@ const AddEditProduct: React.FC = () => {
                   </div>
                 ))}
 
-                {/* Upload Button */}
                 {(existingImages.length + selectedFiles.length) < 6 && (
                   <div className={`relative aspect-square bg-brand-bg border-2 border-dashed border-brand-border rounded-xl transition-colors flex flex-col items-center justify-center cursor-pointer group ${loading ? 'opacity-50 pointer-events-none' : 'hover:border-brand-accent'}`}>
                     <input 
