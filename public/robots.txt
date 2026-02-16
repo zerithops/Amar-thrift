@@ -1,3 +1,5 @@
 User-agent: *
 Disallow: /admin
 Disallow: /dashboard
+
+Sitemap: https://amarthrift.top/sitemap.xml
